@@ -31,6 +31,7 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   const solvedProblems = useGetSolvedProblems();
 
   const closeModal = () => {
+    //isOpen seting false to close the window
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
