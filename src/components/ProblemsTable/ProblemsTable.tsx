@@ -31,7 +31,6 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   const solvedProblems = useGetSolvedProblems();
 
   const closeModal = () => {
-    // bigfix has done committing the code
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
@@ -43,6 +42,10 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
 
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
+
+  const testFeature = () => {
+    console.log("test the commit of the new feature");
+  };
 
   return (
     <>
