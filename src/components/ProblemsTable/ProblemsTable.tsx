@@ -31,6 +31,7 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   const solvedProblems = useGetSolvedProblems();
 
   const closeModal = () => {
+    //bug fix has done chek
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
