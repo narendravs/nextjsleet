@@ -31,6 +31,8 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   const solvedProblems = useGetSolvedProblems();
 
   const closeModal = () => {
+    //bug fix has done chek in git
+
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
@@ -42,11 +44,6 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
 
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-
-  const testFeature = () => {
-    //test the change
-    console.log("test the commit of the new feature");
-  };
 
   return (
     <>
