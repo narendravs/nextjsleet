@@ -32,7 +32,7 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
 
   const closeModal = () => {
     //bug fix has done chek in git
-    //test the change
+
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
