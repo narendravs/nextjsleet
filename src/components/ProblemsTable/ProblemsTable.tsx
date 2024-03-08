@@ -44,6 +44,7 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   }, []);
 
   const testFeature = () => {
+    //test the change
     console.log("test the commit of the new feature");
   };
 
