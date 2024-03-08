@@ -44,7 +44,8 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
 
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-const testFeature = () => {
+
+  const testFeature = () => {
     //test the change
     console.log("test the commit of the new feature");
   };
