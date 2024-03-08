@@ -31,6 +31,7 @@ const ProblemsTable: React.FC<ProblemsTableProps> = ({
   const solvedProblems = useGetSolvedProblems();
 
   const closeModal = () => {
+    // bigfix has done committing the code
     setYoutubePlayer({ isOpen: false, videoId: "" });
   };
 
