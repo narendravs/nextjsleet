@@ -32,10 +32,25 @@ const SignUp = ({}: signUpProps) => {
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    console.log(inputs);
-
-    if (!inputs.email || !inputs.displayName || !inputs.password)
-      return alert("Please fill all fields");
+    if (!inputs.email || !inputs.displayName || !inputs.password) {
+      const missingField = !inputs.email
+        ? "Email"
+        : !inputs.displayName
+          ? "Display Name"
+          : "Password";
+      toast.error(
+        <div>
+          Please fill{" "}
+          <span className="text-red-500 font-bold">{missingField}</span>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 3000,
+          theme: "dark",
+        },
+      );
+      return;
+    }
     try {
       toast.loading("Creating your account", {
         position: "top-center",
@@ -43,13 +58,8 @@ const SignUp = ({}: signUpProps) => {
       });
       const newUser = await createUserWithEmailAndPassword(
         inputs.email,
-        inputs.password
+        inputs.password,
       );
-
-      // console.log(newUser?.user.uid);
-      // console.log(newUser?.user.email);
-      alert(newUser?.user.uid);
-      alert(newUser?.user.email);
 
       if (!newUser) return;
       const userData = {
@@ -63,7 +73,7 @@ const SignUp = ({}: signUpProps) => {
         solvedProblems: [],
         starredProblems: [],
       };
-      console.log(userData);
+
       await setDoc(doc(firestore, "users", newUser.user.uid), userData);
       router.push("/");
     } catch (error: any) {
