@@ -1,0 +1,31 @@
+name: Lighthouse Performance Audit
+on: [push, pull_request]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          # The Build Token you got from 'lhci wizard'
+          LHCI_REMOTE_BUILD_TOKEN: ${{secrets.LHCI_REMOTE_BUILD_TOKEN}}
+          # The GitHub App Token for PR status checks
+          LHCI_GITHUB_APP_TOKEN: ${{secrets.LHCI_GITHUB_APP_TOKEN}}
+          # App secrets for Next.js to run
+          FIREBASE_API_KEY: ${{secrets.FIREBASE_API_KEY}}
+          # Render stores it in supabase postgres
+          LHCI_REMOTE_SERVER: ${{secrets.LHCI_REMOTE_SERVER}}
