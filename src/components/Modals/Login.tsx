@@ -10,17 +10,19 @@ import { toast } from "react-toastify";
 type LoginProps = {};
 const Login = ({}: LoginProps) => {
   const setAuthModalState = useSetRecoilState(authModalState);
-  //const [inputs, setInputs] = useState({ email: "", password: "" });
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [inputs, setInputs] = useState({ email: "", password: "" });
   const [signInWithEmailAndPassword, user, loading, error] =
     useSignInWithEmailAndPassword(auth);
   const router = useRouter();
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email || !password) return alert("Please fill all fields");
+    if (!inputs.email || !inputs.password)
+      return alert("Please fill all fields");
     try {
-      const newUser = await signInWithEmailAndPassword(email, password);
+      const newUser = await signInWithEmailAndPassword(
+        inputs.email,
+        inputs.password,
+      );
       if (!newUser) return;
       router.push("/");
     } catch (error: any) {
@@ -31,9 +33,9 @@ const Login = ({}: LoginProps) => {
       });
     }
   };
-  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setInputs((prev) => ({ ...prev, [e.target.name]: [e.target.value] }));
-  // };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
   const handleClick = (type: "login" | "register" | "forgotPassword") => {
     setAuthModalState((prev) => ({ ...prev, type }));
   };
@@ -61,7 +63,8 @@ const Login = ({}: LoginProps) => {
           id="email"
           className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5 bg-gray-500 border-gray-500 placeholder-gray-400 text-white"
           placeholder="name@company.com"
-          onChange={(e) => setEmail(e.target.value)}
+          value={inputs.email}
+          onChange={handleInputChange}
         />
       </div>
       <div>
@@ -77,9 +80,8 @@ const Login = ({}: LoginProps) => {
           id="password"
           className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-800 focus:border-blue-500 w-full p-2.5 bg-gray-500 border-gray-500 placeholder-gray-400 text-white"
           placeholder="*******"
-          onChange={(e) => {
-            setPassword(e.target.value);
-          }}
+          value={inputs.password}
+          onChange={handleInputChange}
         />
       </div>
       <button
