@@ -1,6 +1,5 @@
 "use client";
 import "../styles/globals.css";
-import Navbar from "@/components/Navbar/Navbar";
 import { RecoilRoot } from "recoil";
 import Head from "next/head";
 import { ToastContainer } from "react-toastify";
@@ -22,7 +21,6 @@ export default function RootLayout({
           />
         </Head>
         <body>
-          {/* <Navbar /> */}
           <ToastContainer />
           {children}
         </body>
