@@ -56,11 +56,6 @@ const Playground = ({ problem, setSuccess, setSolved }: PlaygroundProps) => {
     }
     try {
       userCode = userCode.slice(userCode.indexOf(problem.starterFunctionName));
-      // alert(userCode);
-      // alert(problem.starterFunctionName);
-      // alert(userCode.indexOf(problem.starterFunctionName));
-      // alert(userCode.slice(0));
-
       const cb = new Function(`return ${userCode}`)();
       const handler = problems[problem.id as string].handlerFunction;
       if (typeof handler === "function") {
@@ -86,7 +81,7 @@ const Playground = ({ problem, setSuccess, setSolved }: PlaygroundProps) => {
       console.log(error.message);
       if (
         error.message.startsWith(
-          "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+          "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
         )
       ) {
         toast.error("Oops! One or more test cases failed", {
