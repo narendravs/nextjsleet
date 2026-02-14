@@ -1,8 +1,10 @@
 🚀 Next.js LeetCode Clone
+
 A high-performance coding platform built with Next.js, Firebase, and Recoil. This project features an automated Lighthouse CI pipeline to ensure top-tier performance, accessibility, and SEO.
 
 🛠 Tech Stack
-Frontend: Next.js (App Router), TypeScript, Tailwind CSS
+
+    Frontend: Next.js (App Router), TypeScript, Tailwind CSS
 
     State Management: Recoil
 
@@ -13,15 +15,18 @@ Frontend: Next.js (App Router), TypeScript, Tailwind CSS
     Infrastructure: Render (LHCI Server), Supabase (Postgres storage)
 
 ✨ Features
+
 🔐 Authentication & Security
-Firebase Auth: Secure Login, Signup, and Password Reset.
+
+        Firebase Auth: Secure Login, Signup, and Password Reset.
 
         Route Guards: Protected pages that redirect unauthenticated users.
 
         Persistent Sessions: Users remain logged in across refreshes.
 
 📝 Problem Workspace
-Code Editor: Interactive environment for solving DSA problems.
+
+        Code Editor: Interactive environment for solving DSA problems.
 
         Test Cases: Real-time feedback on code submissions.
 
@@ -30,14 +35,16 @@ Code Editor: Interactive environment for solving DSA problems.
         Toast Notifications: Real-time UI feedback via react-toastify.
 
 📊 Quality Assurance
-CI/CD Pipeline: Automated Lighthouse audits on every Pull Request.
+
+        CI/CD Pipeline: Automated Lighthouse audits on every Pull Request.
 
         Score Assertions: Enforces a minimum 90% score for accessibility and performance.
 
         Audit History: Visualized dashboard tracking performance over time.
 
 🚀 Installation & Setup
-Clone the Repository
+
+    Clone the Repository
 
         Bash
         git clone https://github.com/narendravs/nextjsleet.git
@@ -50,9 +57,12 @@ Clone the Repository
         Create a .env file in the root directory:
 
 Code snippet
-FIREBASE_API_KEY=your_firebase_key
-LHCI_REMOTE_BUILD_TOKEN=your_lhci_token
-LHCI_REMOTE_SERVER=your_render_server_url
+
+    FIREBASE_API_KEY=your_firebase_key
+
+    LHCI_REMOTE_BUILD_TOKEN=your_lhci_token
+
+    LHCI_REMOTE_SERVER=your_render_server_url
 
 Command Description
 
@@ -67,7 +77,8 @@ Command Description
     npm run lint Runs ESLint to check for code quality issues.
 
 📊 Lighthouse CI Workflow
-Every push to the following branches triggers a performance audit:
+
+    Every push to the following branches triggers a performance audit:
 
     master / main
 
