@@ -55,11 +55,16 @@ LHCI_REMOTE_BUILD_TOKEN=your_lhci_token
 LHCI_REMOTE_SERVER=your_render_server_url
 
 Command Description
-npm run dev Starts the Development Server at localhost:7000.
-npm run build Generates an optimized Production Build.
-npm run start Starts the production server (run after npm run build).
-npx lhci autorun Triggers a Lighthouse Performance Audit locally.
-npm run lint Runs ESLint to check for code quality issues.
+
+    npm run dev Starts the Development Server at localhost:7000.
+
+    npm run build Generates an optimized Production Build.
+
+    npm run start Starts the production server (run after npm run build).
+
+    npx lhci autorun Triggers a Lighthouse Performance Audit locally.
+
+    npm run lint Runs ESLint to check for code quality issues.
 
 📊 Lighthouse CI Workflow
 Every push to the following branches triggers a performance audit:
