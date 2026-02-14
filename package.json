@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 7000",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start -p 7000",
+    "lint": "next lint",
+    "lhci": "npx dotenv -e .env -- npx @lhci/cli autorun"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.1",
@@ -27,13 +28,19 @@
     "recoil": "^0.7.7"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.13.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.0.1",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^8",
     "eslint-config-next": "14.0.1",
+    "lighthouse": "^11.7.1",
     "postcss": "^8",
+    "sitemapper": "^4.0.2",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
   }
