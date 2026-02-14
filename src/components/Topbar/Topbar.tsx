@@ -33,16 +33,16 @@ const Topbar = ({ problemPage }: TopbarProps) => {
     const direction = isForward ? 1 : -1;
     const nextProblemOrder = order + direction;
     const nextProblemKey = Object.keys(problems).find(
-      (key) => problems[key].order === nextProblemOrder
+      (key) => problems[key].order === nextProblemOrder,
     );
     if (isForward && !nextProblemKey) {
       const firstProblemKey = Object.keys(problems).find(
-        (key) => problems[key].order === 1
+        (key) => problems[key].order === 1,
       );
       router.push(`/problems/${firstProblemKey}`);
     } else if (!isForward && !nextProblemKey) {
       const lastProblemKey = Object.keys(problems).find(
-        (key) => problems[key].order === Object.keys(problems).length
+        (key) => problems[key].order === Object.keys(problems).length,
       );
       router.push(`/problems/${lastProblemKey}`);
     } else {
@@ -85,16 +85,6 @@ const Topbar = ({ problemPage }: TopbarProps) => {
           </div>
         )}
         <div className="space-x-1 p-2 flex">
-          <div className="flex items-center flex-1">
-            <a
-              href="https://www.buymeacoffee.com/burakorkmezz"
-              target="_blank"
-              rel="noreferrer"
-              className="bg-dark-fill-3 py-1 px-3 cursor-pointer rounded text-brand-orange hover:bg-dark-fill-2"
-            >
-              Premium
-            </a>
-          </div>
           {!user && (
             <Link
               href="/auth"
