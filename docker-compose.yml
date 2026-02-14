@@ -1,0 +1,43 @@
+services:
+  # --- LOCAL SETUP ---
+  lhci-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: lhcidb
+      POSTGRES_USER: lhciuser
+      POSTGRES_PASSWORD: password
+    volumes:
+      - lhci_db_data:/var/lib/postgresql/data
+
+  lhci-server-local:
+    image: patrickhulce/lhci-server:latest
+    ports:
+      - "9008:9008"
+    environment:
+      - LHCI_STORAGE__SQL_CONNECTION_URL=postgresql://lhciuser:password@lhci-db:5432/lhcidb?sslmode=disable
+    depends_on:
+      - lhci-db
+
+  # --- THE RUNNER (The one that uses lighthouserc.js) ---
+  lhci-runner:
+    image: patrickhulce/lhci-client:latest
+    # 1. Start the terminal inside the app folder
+    working_dir: /usr/src/app
+    volumes:
+      # 2. Mount the WHOLE current directory into the container
+      - .:/usr/src/app
+    environment:
+      - LOCAL_TOKEN=${LHCI_LOCAL_BUILD_TOKEN}
+      - REMOTE_TOKEN=${LHCI_REMOTE_BUILD_TOKEN}
+    depends_on:
+      - lhci-server-local
+    # Logic:
+    # 1. Run 'autorun' to audit and upload to LOCAL
+    # 2. Run 'upload' manually to push the already collected data to RENDER
+    entrypoint: >
+      sh -c "
+      lhci autorun --upload.serverBaseUrl=http://lhci-server-local:9008 --upload.token=$$LOCAL_TOKEN &&
+      lhci upload --serverBaseUrl=https://lhci-server-latest.onrender.com --token=$$REMOTE_TOKEN"
+
+volumes:
+  lhci_db_data:
