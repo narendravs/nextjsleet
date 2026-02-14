@@ -4,50 +4,50 @@ A high-performance coding platform built with Next.js, Firebase, and Recoil. Thi
 🛠 Tech Stack
 Frontend: Next.js (App Router), TypeScript, Tailwind CSS
 
-State Management: Recoil
+    State Management: Recoil
 
-Database & Auth: Firebase (Firestore & Authentication)
+    Database & Auth: Firebase (Firestore & Authentication)
 
-Performance Monitoring: Lighthouse CI
+    Performance Monitoring: Lighthouse CI
 
-Infrastructure: Render (LHCI Server), Supabase (Postgres storage)
+    Infrastructure: Render (LHCI Server), Supabase (Postgres storage)
 
 ✨ Features
 🔐 Authentication & Security
 Firebase Auth: Secure Login, Signup, and Password Reset.
 
-Route Guards: Protected pages that redirect unauthenticated users.
+        Route Guards: Protected pages that redirect unauthenticated users.
 
-Persistent Sessions: Users remain logged in across refreshes.
+        Persistent Sessions: Users remain logged in across refreshes.
 
 📝 Problem Workspace
 Code Editor: Interactive environment for solving DSA problems.
 
-Test Cases: Real-time feedback on code submissions.
+        Test Cases: Real-time feedback on code submissions.
 
-YouTube Integration: Built-in video solutions for every problem.
+        YouTube Integration: Built-in video solutions for every problem.
 
-Toast Notifications: Real-time UI feedback via react-toastify.
+        Toast Notifications: Real-time UI feedback via react-toastify.
 
 📊 Quality Assurance
 CI/CD Pipeline: Automated Lighthouse audits on every Pull Request.
 
-Score Assertions: Enforces a minimum 90% score for accessibility and performance.
+        Score Assertions: Enforces a minimum 90% score for accessibility and performance.
 
-Audit History: Visualized dashboard tracking performance over time.
+        Audit History: Visualized dashboard tracking performance over time.
 
 🚀 Installation & Setup
 Clone the Repository
 
-Bash
-git clone https://github.com/narendravs/nextjsleet.git
-cd nextjsleet
-Install Dependencies
+        Bash
+        git clone https://github.com/narendravs/nextjsleet.git
+        cd nextjsleet
+        Install Dependencies
 
-Bash
-npm install
-Environment Variables
-Create a .env file in the root directory:
+        Bash
+        npm install
+        Environment Variables
+        Create a .env file in the root directory:
 
 Code snippet
 FIREBASE_API_KEY=your_firebase_key
@@ -69,10 +69,10 @@ Command Description
 📊 Lighthouse CI Workflow
 Every push to the following branches triggers a performance audit:
 
-master / main
+    master / main
 
-production
+    production
 
-development
+    development
 
-The results are automatically uploaded to your private LHCI server and can be viewed via the dashboard link provided in the GitHub Action logs.
+    The results are automatically uploaded to your private LHCI server and can be viewed via the dashboard link provided in the GitHub Action logs.
