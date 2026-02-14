@@ -72,6 +72,7 @@ module.exports = {
       target: "lhci",
       serverBaseUrl: process.env.LHCI_REMOTE_SERVER,
       token: process.env.LHCI_REMOTE_BUILD_TOKEN,
+      githubAppToken: process.env.LHCI_GITHUB_APP_TOKEN,
     },
   },
 };
