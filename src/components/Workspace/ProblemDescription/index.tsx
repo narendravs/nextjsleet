@@ -33,6 +33,12 @@ type ProblemDescriptionProps = {
   problem: Problem;
   _solved: boolean;
 };
+interface UserProblemRefs {
+  userDoc: any;
+  problemDoc: any;
+  userRef: any;
+  problemRef: any;
+}
 const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
   const [user] = useAuthState(auth);
 
@@ -42,13 +48,17 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
     useGetUsersDataOnProblem(problem.id);
   const [updating, setUpdating] = useState(false);
 
-  // const returnUserDataAndProblemData = async (transaction: any) => {
-  //   const userRef = doc(firestore, "usres", user!.uid);
-  //   const problemRef = doc(firestore, "problems", problem.id);
-  //   const userDoc = await transaction.get(userRef);
-  //   const problemDoc = await transaction.get(problemRef);
-  //   return { userDoc, problemDoc, userRef, problemRef };
-  // };
+  const returnUserDataAndProblemData = async (
+    transaction: any,
+    userId: string,
+    problemId: string,
+  ): Promise<UserProblemRefs> => {
+    const userRef = doc(firestore, "users", userId);
+    const problemRef = doc(firestore, "problems", problemId);
+    const userDoc = await transaction.get(userRef);
+    const problemDoc = await transaction.get(problemRef);
+    return { userDoc, problemDoc, userRef, problemRef };
+  };
 
   const handleLike = async () => {
     if (!user) {
@@ -61,13 +71,8 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
     if (updating) return;
     setUpdating(true);
     await runTransaction(firestore, async (transaction) => {
-      // const { problemDoc, userDoc, problemRef, userRef } =
-      //   await returnUserDataAndProblemData(transaction);
-
-      const userRef = doc(firestore, "users", user!.uid);
-      const problemRef = doc(firestore, "problems", problem.id);
-      const userDoc = await transaction.get(userRef);
-      const problemDoc = await transaction.get(problemRef);
+      const { problemDoc, userDoc, problemRef, userRef } =
+        await returnUserDataAndProblemData(transaction, user.uid, problem.id);
 
       if (userDoc.exists() && problemDoc.exists()) {
         if (liked) {
@@ -81,7 +86,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
             likes: problemDoc.data().likes - 1,
           });
           setCurrentProblem((prev) =>
-            prev ? { ...prev, likes: prev.likes - 1 } : null
+            prev ? { ...prev, likes: prev.likes - 1 } : null,
           );
           setData((prev) => ({ ...prev, liked: false }));
         } else if (disliked) {
@@ -98,7 +103,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
           setCurrentProblem((prev) =>
             prev
               ? { ...prev, likes: prev.likes + 1, dislikes: prev.dislikes - 1 }
-              : null
+              : null,
           );
           setData((prev) => ({ ...prev, liked: true, disliked: false }));
         } else {
@@ -109,7 +114,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
             likes: problemDoc.data().likes + 1,
           });
           setCurrentProblem((prev) =>
-            prev ? { ...prev, likes: prev.likes + 1 } : null
+            prev ? { ...prev, likes: prev.likes + 1 } : null,
           );
           setData((prev) => ({ ...prev, liked: true }));
           transaction.update(userRef, {
@@ -119,7 +124,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
             likes: problemDoc.data().likes + 1,
           });
           setCurrentProblem((prev) =>
-            prev ? { ...prev, likes: prev.likes + 1 } : null
+            prev ? { ...prev, likes: prev.likes + 1 } : null,
           );
           setData((prev) => ({ ...prev, liked: true }));
         }
@@ -139,13 +144,8 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
     if (updating) return;
     setUpdating(true);
     await runTransaction(firestore, async (transaction) => {
-      // const { problemDoc, problemRef, userDoc, userRef } =
-      //   await returnUserDataAndProblemData(transaction);
-
-      const userRef = doc(firestore, "users", user!.uid);
-      const problemRef = doc(firestore, "problems", problem.id);
-      const userDoc = await transaction.get(userRef);
-      const problemDoc = await transaction.get(problemRef);
+      const { problemDoc, problemRef, userDoc, userRef } =
+        await returnUserDataAndProblemData(transaction, user!.uid, problem.id);
 
       if (userDoc.exists() && problemDoc.exists()) {
         // already disliked, already liked, not disliked or liked
@@ -159,7 +159,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
             dislikes: problemDoc.data().dislikes - 1,
           });
           setCurrentProblem((prev) =>
-            prev ? { ...prev, dislikes: prev.dislikes - 1 } : null
+            prev ? { ...prev, dislikes: prev.dislikes - 1 } : null,
           );
           setData((prev) => ({ ...prev, disliked: false }));
         } else if (liked) {
@@ -176,7 +176,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
           setCurrentProblem((prev) =>
             prev
               ? { ...prev, dislikes: prev.dislikes + 1, likes: prev.likes - 1 }
-              : null
+              : null,
           );
           setData((prev) => ({ ...prev, disliked: true, liked: false }));
         } else {
@@ -187,7 +187,7 @@ const ProblemDescription = ({ problem, _solved }: ProblemDescriptionProps) => {
             dislikes: problemDoc.data().dislikes + 1,
           });
           setCurrentProblem((prev) =>
-            prev ? { ...prev, dislikes: prev.dislikes + 1 } : null
+            prev ? { ...prev, dislikes: prev.dislikes + 1 } : null,
           );
           setData((prev) => ({ ...prev, disliked: true }));
         }
@@ -369,22 +369,20 @@ function useGetCurrentProblem(problemId: string) {
 
       const q = query(
         collection(firestore, "problems"),
-        where("id", "==", problemId)
+        where("id", "==", problemId),
       );
 
       const querySnapshot = await getDocs(q);
 
       querySnapshot.forEach((doc) => {
-        // doc.data() is never undefined for query doc snapshots
-        console.log(doc.id, " => ", doc.data());
         const problem = doc.data();
         setCurrentProblem({ id: doc.id, ...problem } as DBProblem);
         setProblemDifficultyClass(
           problem.difficulty === "Easy"
             ? "bg-olive text-olive"
             : problem.difficulty === "Medium"
-            ? "bg-dark-yellow text-dark-yellow"
-            : " bg-dark-pink text-dark-pink"
+              ? "bg-dark-yellow text-dark-yellow"
+              : " bg-dark-pink text-dark-pink",
         );
       });
 
