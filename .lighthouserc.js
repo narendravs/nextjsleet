@@ -3,34 +3,46 @@ const path = require("path");
 require("dotenv").config();
 const { execSync } = require("child_process");
 
-// 1. Setup Paths
-const urlFilePath = path.join(__dirname, ".lhci-urls");
+// Check if we are running the server or the auditor
+const isServer = process.argv.includes("server");
 
-// 2. Run the generator synchronously (runs immediately when file is loaded)
-try {
-  console.log("🛠️  Syncing URLs from sitemap...");
-  execSync("node get-urls.js", { stdio: "inherit" });
-} catch (err) {
-  console.warn("⚠️  URL Sync failed.");
-}
-
-// 3. Read the file into a variable
+//  Declare the variable in the outer scope with a default value
 let finalUrls = ["http://localhost:7000/"];
-if (fs.existsSync(urlFilePath)) {
-  const content = fs.readFileSync(urlFilePath, "utf8").trim();
-  if (content) {
-    finalUrls = content
-      .split(",")
-      .map((u) => u.trim())
-      .filter(Boolean);
+
+// ONLY run the URL scraping logic if we are NOT the server
+if (!isServer) {
+  const urlFilePath = path.join(__dirname, ".lhci-urls");
+  try {
+    console.log("🛠️  Syncing URLs from sitemap...");
+    execSync("node get-urls.js", { stdio: "inherit" });
+
+    if (fs.existsSync(urlFilePath)) {
+      const content = fs.readFileSync(urlFilePath, "utf8").trim();
+      if (content) {
+        finalUrls = content
+          .split(",")
+          .map((u) => u.trim())
+          .filter(Boolean);
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️  URL Sync failed.");
   }
 }
 
-console.log("🚀 LHCI will audit these URLs:", finalUrls);
-
-// 4. THE FIX: Export a PLAIN OBJECT, not a function
+// THE FIX: Export a PLAIN OBJECT, not a function
 module.exports = {
   ci: {
+    // SERVER CONFIG (This is what Render uses)
+    server: {
+      port: process.env.PORT || 10000,
+      storage: {
+        storageMethod: "sql",
+        sqlDialect: "postgres",
+        sqlConnectionUrl: process.env.LHCI_REMOTE_STORAGE__SQL_CONNECTION_URL,
+      },
+    },
+    // COLLECT CONFIG (This is what GitHub Actions uses)
     collect: {
       startServerCommand: "npx dotenv -e .env -- npm run start",
       url: finalUrls, // No extra brackets, just the array
