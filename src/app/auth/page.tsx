@@ -8,6 +8,7 @@ import { useRecoilValue } from "recoil";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import "react-toastify/dist/ReactToastify.css";
 type AuthPageProps = {};
 
 const AuthPage: React.FC<AuthPageProps> = () => {
