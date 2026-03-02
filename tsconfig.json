@@ -27,7 +27,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/firebase/firebase.js"
+    "src/firebase/firebase.js",
+    "jest.setup.ts"
   ],
   "exclude": ["node_modules"]
 }
