@@ -1,127 +1,113 @@
 "use client";
 import { firestore } from "@/firebase/firebase";
-import { FormEvent, useState } from "react";
-import { doc, setDoc, collection } from "firebase/firestore";
-import { problems } from "@/mockProblems/problems";
+import { useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
 
-const Firestore = () => {
-  const [id, setId] = useState("");
-  const [title, SetTitle] = useState("");
-  const [difficulty, SetDifficulty] = useState("");
-  const [category, SetCategory] = useState("");
-  const [order, SetOrder] = useState("");
-  const [videoId, SetVideoId] = useState("");
+export default function AddProblem() {
+  const [inputs, setInputs] = useState({
+    id: "",
+    title: "",
+    difficulty: "Easy",
+    category: "",
+    videoId: "",
+    link: "",
+    order: 0,
+    likes: 0,
+    dislikes: 0,
+  });
 
-  const sub = async (e: FormEvent) => {
-    e.preventDefault();
-    problems.map(async (doc1, idx) => {
-      const data = {
-        id: doc1.id,
-        title: doc1.title,
-        difficulty: doc1.difficulty,
-        category: doc1.category,
-        order: doc1.order,
-        videoId: doc1.videoId,
-      };
-
-      try {
-        // Add a new document with a generated id
-        const newCityRef = doc(collection(firestore, "problems"));
-
-        // later...
-        await setDoc(newCityRef, data).then(() =>
-          alert("Data submitted successfully")
-        );
-      } catch (error) {
-        console.log("Error while loading data");
-      }
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    setInputs({
+      ...inputs,
+      [e.target.name]: e.target.value,
     });
+  };
 
-    // Add data to the store
-    // db.collection("data")
-    //   .add({
-    //     Nane: name,
-    //     Age: age,
-    //     CourseEnrolled: course,
-    //   })
-    //   .then((docRef) => {
-    //     alert("Data Successfully Submitted");
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error adding document: ", error);
-    //   });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(firestore, "problems", inputs.id), {
+        ...inputs,
+        order: Number(inputs.order),
+      });
+      alert("Saved to DB");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving to DB");
+    }
   };
 
   return (
-    <div>
-      <center>
-        <form
-          style={{ marginTop: "200px" }}
-          onSubmit={(event) => {
-            sub(event);
-          }}
+    <div className="bg-black min-h-screen flex items-center justify-center text-white">
+      <form
+        className="p-6 flex flex-col gap-3 w-full max-w-md border rounded"
+        onSubmit={handleSubmit}
+      >
+        <h1 className="text-2xl font-bold text-center mb-4">Add New Problem</h1>
+        <input
+          type="text"
+          placeholder="Problem ID (slug)"
+          name="id"
+          value={inputs.id}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <input
+          type="text"
+          placeholder="Title"
+          name="title"
+          value={inputs.title}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <select
+          name="difficulty"
+          value={inputs.difficulty}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
         >
-          {/* <input
-            type="text"
-            placeholder="your id"
-            onChange={(e) => {
-              setId(e.target.value);
-            }}
-          />
-          <br />
-          <br />
-          <input
-            type="text"
-            placeholder="your title"
-            onChange={(e) => {
-              SetTitle(e.target.value);
-            }}
-          />
-          <br />
-          <br />
-          <input
-            type="text"
-            placeholder="Course difficulty"
-            onChange={(e) => {
-              SetDifficulty(e.target.value);
-            }}
-          />
-          <br />
-          <br />
-          <input
-            type="text"
-            placeholder="Course category"
-            onChange={(e) => {
-              SetCategory(e.target.value);
-            }}
-          />
-          <br />
-          <br />
-          <input
-            type="number"
-            placeholder="Course order"
-            onChange={(e) => {
-              SetOrder(e.target.value);
-            }}
-          />
-          <br />
-          <br />
-          <input
-            type="text"
-            placeholder="Course videoId"
-            onChange={(e) => {
-              SetVideoId(e.target.value);
-            }}
-          />
-          <br />
-          <br /> */}
-          <button type="submit" className="bg-gray-500 rounded-lg p-1 px-3">
-            Submit
-          </button>
-        </form>
-      </center>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Category"
+          name="category"
+          value={inputs.category}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <input
+          type="number"
+          placeholder="Order"
+          name="order"
+          value={inputs.order}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <input
+          type="text"
+          placeholder="Video ID (YouTube)"
+          name="videoId"
+          value={inputs.videoId}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <input
+          type="text"
+          placeholder="Link (optional)"
+          name="link"
+          value={inputs.link}
+          onChange={handleInputChange}
+          className="p-2 rounded bg-gray-700 border border-gray-600"
+        />
+        <button className="bg-orange-500 p-2 rounded font-bold hover:bg-orange-600">
+          Save to Firestore
+        </button>
+      </form>
     </div>
   );
-};
-
-export default Firestore;
+}
