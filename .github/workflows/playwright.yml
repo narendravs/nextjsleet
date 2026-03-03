@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: Playwright & Jest Tests
 on:
   push:
     branches: [master, production]
@@ -29,6 +29,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # --- STEPS FOR JEST ---
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run Integration Tests
+        run: npm run test:integration
+
+      # --- PLAYWRIGHT STEPS ---
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
