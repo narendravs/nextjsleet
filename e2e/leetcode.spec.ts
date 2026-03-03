@@ -22,6 +22,12 @@ test.describe("Sitemap Smoke Tests", () => {
     if (url.endsWith(".xml")) continue;
 
     test(`Verify page loads: ${url}`, async ({ page }) => {
+      // Log if there are any console errors (Great for AI debugging later)
+      page.on("console", (msg) => {
+        if (msg.type() === "error")
+          console.log(`Error on ${url}: ${msg.text()}`);
+      });
+
       // Navigate to the page
       await page.goto(url, {
         waitUntil: url === "/auth" ? "networkidle" : "domcontentloaded",
@@ -34,12 +40,6 @@ test.describe("Sitemap Smoke Tests", () => {
       // Verify main content exists (adjust selector to your app's main container)
       const body = page.locator("body");
       await expect(body).toBeVisible();
-
-      // Log if there are any console errors (Great for AI debugging later)
-      page.on("console", (msg) => {
-        if (msg.type() === "error")
-          console.log(`Error on ${url}: ${msg.text()}`);
-      });
     });
   }
 });
