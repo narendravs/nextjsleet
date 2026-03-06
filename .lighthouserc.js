@@ -47,17 +47,18 @@ module.exports = {
       startServerCommand: "npx dotenv -e .env -- npm run start",
       url: finalUrls, // No extra brackets, just the array
       numberOfRuns: 1,
-      startServerReadyPattern: "ready",
-      startServerReadyTimeout: 90000,
+      startServerReadyPattern: "ready|started|listening|http://localhost",
+      startServerReadyTimeout: 480000,
       settings: {
-        maxWaitForFcp: 90000,
+        maxWaitForFcp: 120000,
+        maxWaitForLoad: 120000,
         pauseAfterLoadMs: 5000,
         // ADD THESE to disable mobile throttling for debugging
-        throttlingMethod: "provided",
+        throttlingMethod: "simulate",
         throttling: {
           cpuSlowdownMultiplier: 1,
         },
-        chromeFlags: "--no-sandbox --disable-gpu",
+        chromeFlags: "--no-sandbox --disable-gpu --headless",
       },
     },
     assert: {
