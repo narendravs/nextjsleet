@@ -2,8 +2,11 @@
 const nextConfig = {
   images: {
     // This stops the 'upstream' error by serving images as-is during tests
-    unoptimized: process.env.NODE_ENV === "test" || !!process.env.CI,
-
+    // NOTE: Disabling this for CI/Testing drastically hurts performance scores.
+    // It's better to ensure your CI environment can handle image optimization
+    // (e.g., by installing `sharp` via `npm i sharp`).
+    // Forcing optimization to get accurate Lighthouse scores:
+    unoptimized: false,
     // Allows PNG, JPG, WebP (Defaults)
     formats: ["image/avif", "image/webp"],
 
