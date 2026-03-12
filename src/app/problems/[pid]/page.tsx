@@ -1,27 +1,57 @@
-"use client";
-import Topbar from "@/components/Topbar/Topbar";
-import Workspace from "@/components/Workspace/Workspace";
-import useHasMounted from "@/hooks/useHasMounted";
 import { problems } from "@/utils/problems";
+import { Metadata } from "next";
+import dynamic from "next/dynamic";
 
-const ProblemPage = ({ params }: { params: { pid: string } }) => {
-  const hasMounted = useHasMounted();
-  if (!hasMounted) return null;
+// Dynamically import ProblemClient with SSR disabled to prevent Firebase initialization errors
+const ProblemClient = dynamic(
+  () => import("@/components/ProblemClient/ProblemClient"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="bg-dark-layer-1 h-screen flex items-center justify-center text-white"
+        role="status"
+        aria-live="polite"
+      >
+        Loading problem…
+      </div>
+    ),
+  },
+);
+
+type Props = {
+  params: { pid: string };
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pid } = params;
+  const problem = problems[pid];
 
-  const data = getStaticProp();
-
-  function getStaticProp() {
-    const problem = problems[pid];
-    return problem;
+  if (!problem) {
+    return { title: "Problem Not Found" };
   }
 
-  return (
-    <div>
-      <Topbar problemPage />
-      <Workspace problem={data} />
-    </div>
-  );
+  return {
+    title: `${problem.title} | LeetCode Clone`,
+    description: `Solve the ${problem.title} problem.`,
+  };
+}
+
+const ProblemPage = async ({ params }: Props) => {
+  const { pid } = params;
+
+  const problem = problems[pid];
+
+  if (!problem) {
+    return (
+      <div className="bg-dark-layer-1 h-screen flex items-center justify-center text-white">
+        <h1 className="text-2xl font-bold">Problem not found</h1>
+      </div>
+    );
+  }
+
+  // Pass the data down to the Client Component
+  return <ProblemClient problemId={pid} />;
 };
 
 export default ProblemPage;
