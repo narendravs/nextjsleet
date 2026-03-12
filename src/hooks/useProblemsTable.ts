@@ -1,59 +1,46 @@
 import { useEffect, useState } from "react";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-} from "firebase/firestore";
-import { auth, firestore } from "@/firebase/firebase";
-import { DBProblem } from "@/utils/types/problem";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, firestore } from "../firebase/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-
-export function useGetProblems(
-  setLoadingProblems: React.Dispatch<React.SetStateAction<boolean>>,
-) {
-  const [problems, setProblems] = useState<DBProblem[]>([]);
-
-  useEffect(() => {
-    const getProblems = async () => {
-      // fetching data logic
-      setLoadingProblems(true);
-      const q = query(
-        collection(firestore, "problems"),
-        orderBy("order", "asc"),
-      );
-      const querySnapshot = await getDocs(q);
-      const tmp: DBProblem[] = [];
-      querySnapshot.forEach((doc) => {
-        tmp.push({ id: doc.id, ...doc.data() } as DBProblem);
-      });
-      setProblems(tmp);
-      setLoadingProblems(false);
-    };
-
-    getProblems();
-  }, [setLoadingProblems]);
-  return problems;
-}
 
 export function useGetSolvedProblems() {
   const [solvedProblems, setSolvedProblems] = useState<string[]>([]);
   const [user] = useAuthState(auth);
 
   useEffect(() => {
-    const getSolvedProblems = async () => {
-      const userRef = doc(firestore, "users", user!.uid);
-      const userDoc = await getDoc(userRef);
+    const getAndCacheSolvedProblems = async () => {
+      // This function should only be called when user exists.
+      if (!user) return;
 
-      if (userDoc.exists()) {
-        setSolvedProblems(userDoc.data().solvedProblems);
+      const userRef = doc(firestore, "users", user.uid);
+      try {
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const freshData = userDoc.data().solvedProblems || [];
+          setSolvedProblems(freshData);
+          // Cache the fresh data with a user-specific key
+          localStorage.setItem(
+            `solvedProblems-${user.uid}`,
+            JSON.stringify(freshData),
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching solved problems:", error);
       }
     };
 
-    if (user) getSolvedProblems();
-    if (!user) setSolvedProblems([]);
+    if (user) {
+      // On user load, first try to populate from cache for an instant UI update
+      const cachedData = localStorage.getItem(`solvedProblems-${user.uid}`);
+      if (cachedData) {
+        setSolvedProblems(JSON.parse(cachedData));
+      }
+      // Then, fetch fresh data in the background to update the cache and UI
+      getAndCacheSolvedProblems();
+    } else {
+      // User is logged out, clear the state.
+      setSolvedProblems([]);
+    }
   }, [user]);
 
   return solvedProblems;
