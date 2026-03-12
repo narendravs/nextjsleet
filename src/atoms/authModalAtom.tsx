@@ -1,6 +1,6 @@
 import { atom } from "recoil";
 
-type AuthModalState = {
+export type AuthModalState = {
   isOpen: boolean;
   type: "login" | "register" | "forgotPassword";
 };
