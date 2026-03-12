@@ -23,6 +23,9 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: ["react-icons"],
+  },
 };
 
 module.exports = nextConfig;
