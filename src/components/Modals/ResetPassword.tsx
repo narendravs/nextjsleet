@@ -15,26 +15,27 @@ const ResetPassword = ({}: resetPasswordProps) => {
   const [sendPasswordResetEmail, sending, error] =
     useSendPasswordResetEmail(auth);
 
-  const router = useRouter();
-  const handleRequest = async (e: React.FormEvent<HTMLElement>) => {
+  const handleRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const success = await sendPasswordResetEmail(email);
-    console.log(success);
     if (success) {
       toast.success("Password reset email sent", {
         position: "top-center",
         autoClose: 3000,
         theme: "dark",
       });
-      alert("Password reset email sent");
       setAuthModal((prev) => ({ ...prev, isOpen: false, type: "login" }));
     }
   };
 
   useEffect(() => {
     if (error) {
-      alert(error.message);
+      toast.error(error.message, {
+        position: "top-center",
+        autoClose: 3000,
+        theme: "dark",
+      });
     }
   }, [error]);
 
