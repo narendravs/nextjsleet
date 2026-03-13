@@ -35,10 +35,10 @@ const Topbar = ({ problemPage }: TopbarProps) => {
             <Image
               src="/logo-full.png"
               alt="Logo"
-              fill
-              sizes="100px"
-              className="object-contain"
+              width={100}
+              height={22}
               priority
+              className="object-contain"
             />
           </div>
         </Link>
