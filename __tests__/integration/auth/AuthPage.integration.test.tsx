@@ -23,7 +23,7 @@ describe("AuthPage Integration Test", () => {
     jest.clearAllMocks();
   });
 
-  it('should open the login modal when the "Sign In" button in the navbar is clicked', () => {
+  it('should open the login modal when the "Sign In" button in the navbar is clicked', async () => {
     render(
       <RecoilRoot>
         <AuthPage />
@@ -31,20 +31,28 @@ describe("AuthPage Integration Test", () => {
       </RecoilRoot>,
     );
 
-    // 1. The page should render the Navbar
+    // 1. Verify the "Sign In" button exists in the Navbar
     const signInButton = screen.getByRole("button", { name: /sign in/i });
     expect(signInButton).toBeInTheDocument();
-
-    // 2. The modal should not be visible initially
-    // We check for text that is unique to the Login component.
-    expect(screen.queryByText("Sign in to LeetClone")).not.toBeInTheDocument();
-
-    // 3. User clicks the "Sign In" button
     fireEvent.click(signInButton);
 
-    // 4. Assert that the AuthModal with the Login component is now visible
-    // The modal and its content should now be in the DOM.
-    expect(screen.getByText("Sign in to LeetClone")).toBeInTheDocument();
+    // Find inputs using the labels you checked in the code
+    const emailInput = await screen.findByLabelText(/your email/i);
+    const passwordInput = screen.getByLabelText(/your password/i);
+    const submitButton = screen.getByRole("button", { name: /log in/i });
+
+    // Simulate typing
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    // 2. Perform the ACTION (This triggers the state change)
+    fireEvent.click(submitButton);
+
+    // 3. WAIT for the dynamic component to load and render
+    // findByText will now wait correctly because the click has already happened
+    const modalHeading = await screen.findByText("Sign in to LeetClone");
+    expect(modalHeading).toBeInTheDocument();
+
+    // 4. Assert other elements are now present
     expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your password/i)).toBeInTheDocument();
   });
