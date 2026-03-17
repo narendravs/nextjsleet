@@ -15,6 +15,10 @@ const config: Config = {
     // This handles your @/ path alias
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  testMatch: [
+    "<rootDir>/__tests__/unit/**/*.test.{ts,tsx}",
+    "<rootDir>/__tests__/integration/**/*.test.{ts,tsx}",
+  ],
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/e2e/"],
 };
 
