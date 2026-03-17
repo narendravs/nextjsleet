@@ -8,16 +8,24 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 type LoginProps = {};
+
 const Login = ({}: LoginProps) => {
   const setAuthModalState = useSetRecoilState(authModalState);
   const [inputs, setInputs] = useState({ email: "", password: "" });
   const [signInWithEmailAndPassword, user, loading, error] =
     useSignInWithEmailAndPassword(auth);
   const router = useRouter();
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!inputs.email || !inputs.password)
-      return alert("Please fill all fields");
+    if (!inputs.email || !inputs.password) {
+      toast.error("Please fill all fields", {
+        position: "top-center",
+        autoClose: 3000,
+        theme: "dark",
+      });
+      return;
+    }
     try {
       const newUser = await signInWithEmailAndPassword(
         inputs.email,
@@ -33,12 +41,15 @@ const Login = ({}: LoginProps) => {
       });
     }
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
   const handleClick = (type: "login" | "register" | "forgotPassword") => {
     setAuthModalState((prev) => ({ ...prev, type }));
   };
+
   useEffect(() => {
     if (error)
       toast.error(error.message, {
@@ -47,9 +58,12 @@ const Login = ({}: LoginProps) => {
         theme: "dark",
       });
   }, [error]);
+
   return (
-    <form className="space-y-6 px-6" onSubmit={handleLogin}>
+    <form className="space-y-6 px-6 pb-4" onSubmit={handleLogin}>
       <h3 className="text-xl font-medium text-white">Sign in to LeetClone</h3>
+
+      {/* Email Field */}
       <div>
         <label
           htmlFor="email"
@@ -61,12 +75,16 @@ const Login = ({}: LoginProps) => {
           type="email"
           name="email"
           id="email"
-          className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5 bg-gray-500 border-gray-500 placeholder-gray-400 text-white"
+          autoComplete="email"
+          className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5 bg-gray-600 border-gray-500 placeholder-gray-400 text-white"
           placeholder="name@company.com"
+          required
           value={inputs.email}
           onChange={handleInputChange}
         />
       </div>
+
+      {/* Password Field */}
       <div>
         <label
           htmlFor="password"
@@ -78,38 +96,45 @@ const Login = ({}: LoginProps) => {
           type="password"
           name="password"
           id="password"
-          className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-800 focus:border-blue-500 w-full p-2.5 bg-gray-500 border-gray-500 placeholder-gray-400 text-white"
+          autoComplete="current-password"
+          className="border-2 outline-none sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full p-2.5 bg-gray-600 border-gray-500 placeholder-gray-400 text-white"
           placeholder="*******"
+          required
           value={inputs.password}
           onChange={handleInputChange}
         />
       </div>
+
+      {/* Submit Button */}
       <button
         type="submit"
-        className="w-full text-white focus:ring-blue-300 rounded-lg text-sm font-medium text-center px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-s"
+        disabled={loading}
+        className="w-full text-white focus:ring-4 focus:ring-blue-300 rounded-lg text-sm font-medium text-center px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-s disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Loading..." : "Log In"}
+        {loading ? "Logging in..." : "Log In"}
       </button>
-      <button
-        type="submit"
-        className="flex w-full justify-end"
-        onClick={() => handleClick("forgotPassword")}
-      >
-        <a
-          href="#"
-          className="text-sm block text-brand-orange hover:underline w-full text-right"
+
+      {/* Forgot Password Link - Styled as a button for accessibility */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="text-sm text-brand-orange hover:underline focus:outline-none focus:ring-2 focus:ring-brand-orange rounded"
+          onClick={() => handleClick("forgotPassword")}
         >
           Forgot Password?
-        </a>
-      </button>
+        </button>
+      </div>
+
+      {/* Register Link */}
       <div className="text-sm font-medium text-gray-300">
-        <a
-          href="#"
-          className="text-blue-700 hover:underline"
+        Not registered?{" "}
+        <button
+          type="button"
+          className="text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
           onClick={() => handleClick("register")}
         >
           Create account
-        </a>
+        </button>
       </div>
     </form>
   );

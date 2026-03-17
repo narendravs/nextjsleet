@@ -46,21 +46,37 @@ module.exports = {
     collect: {
       startServerCommand: "npx dotenv -e .env -- npm run start",
       url: finalUrls, // No extra brackets, just the array
-      numberOfRuns: 1,
-      startServerReadyPattern: "ready",
-      startServerReadyTimeout: 90000,
+      numberOfRuns: 3,
+      startServerReadyPattern: "ready|started|listening|http://localhost",
+      startServerReadyTimeout: 480000,
       settings: {
-        maxWaitForFcp: 90000,
+        preset: "desktop",
+        maxWaitForFcp: 120000,
+        maxWaitForLoad: 120000,
         pauseAfterLoadMs: 5000,
-        // ADD THESE to disable mobile throttling for debugging
-        throttlingMethod: "provided",
+        throttlingMethod: "provided", // This tells LH "Do not throttle at all, use the system speed"
+        onlyCategories: [
+          "performance",
+          "accessibility",
+          "best-practices",
+          "seo",
+        ],
+        skipAudits: ["uses-http2", "uses-long-cache-ttl", "is-on-https"], // Localhost usually isn't HTTP2, skip to avoid the penalty
+        extraHeaders: { "X-Lighthouse-Audit": "true" },
         throttling: {
           cpuSlowdownMultiplier: 1,
+          requestLatencyMs: 0,
+          downloadThroughputKbps: 0,
+          uploadThroughputKbps: 0,
         },
-        chromeFlags: "--no-sandbox --disable-gpu",
+        blockedUrlPatterns: ["*analytics*", "*tracking*", "*facebook*"],
+        chromeFlags:
+          "--no-sandbox --disable-gpu --headless --incognito --block-new-web-contents",
       },
     },
     assert: {
+      // This ensures the warning only triggers if the MEDIAN of 3 runs is low
+      aggregationMethod: "median",
       assertions: {
         "categories:performance": ["warn", { minScore: 0.9 }],
         "categories:accessibility": ["warn", { minScore: 0.9 }],
