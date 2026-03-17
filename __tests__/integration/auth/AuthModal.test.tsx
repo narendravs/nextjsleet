@@ -5,15 +5,22 @@ import { useCloseModal } from "@/components/Modals/AuthModal";
 import { authModalState, AuthModalState } from "@/atoms/authModalAtom";
 
 // Mocks for child components
-jest.mock("../Login", () => () => (
-  <div data-testid="login-form">Login Form</div>
-));
-jest.mock("../SignUp", () => () => (
-  <div data-testid="signup-form">Signup Form</div>
-));
-jest.mock("../ResetPassword", () => () => (
-  <div data-testid="reset-password-form">Reset Password Form</div>
-));
+jest.mock("@/components/Modals/Login", () => ({
+  __esModule: true,
+  default: () => <div data-testid="login-form">Login Form</div>,
+}));
+
+jest.mock("@/components/Modals/SignUp", () => ({
+  __esModule: true,
+  default: () => <div data-testid="signup-form">Signup Form</div>,
+}));
+
+jest.mock("@/components/Modals/ResetPassword", () => ({
+  __esModule: true,
+  default: () => (
+    <div data-testid="reset-password-form">Reset Password Form</div>
+  ),
+}));
 
 // Test component to observe and trigger modal close
 const TestComponent = () => {
@@ -41,19 +48,23 @@ describe("AuthModal and useCloseModal", () => {
     );
   };
 
-  it('should render Login component when type is "login"', () => {
+  it('should render Login component when type is "login"', async () => {
     renderWithRecoil({ isOpen: true, type: "login" });
-    expect(screen.getByTestId("login-form")).toBeInTheDocument();
+    // findByTestId waits for the element to appear
+    const loginForm = await screen.findByTestId("login-form");
+    expect(loginForm).toBeInTheDocument();
   });
 
-  it('should render Signup component when type is "register"', () => {
+  it('should render Signup component when type is "register"', async () => {
     renderWithRecoil({ isOpen: true, type: "register" });
-    expect(screen.getByTestId("signup-form")).toBeInTheDocument();
+    const signupForm = await screen.findByTestId("signup-form");
+    expect(signupForm).toBeInTheDocument();
   });
 
-  it('should render ResetPassword component when type is "forgotPassword"', () => {
+  it('should render ResetPassword component when type is "forgotPassword"', async () => {
     renderWithRecoil({ isOpen: true, type: "forgotPassword" });
-    expect(screen.getByTestId("reset-password-form")).toBeInTheDocument();
+    const resetForm = await screen.findByTestId("reset-password-form");
+    expect(resetForm).toBeInTheDocument();
   });
 
   it("should close the modal on clicking the close button", () => {
