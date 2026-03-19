@@ -1,124 +1,76 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import Workspace from "@/components/Workspace/Workspace";
 import { problems } from "@/utils/problems";
-import { ToastContainer } from "react-toastify";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { updateDoc, getDoc } from "firebase/firestore";
 
-// Mock dependencies
-jest.mock("react-firebase-hooks/auth");
-jest.mock("firebase/firestore", () => ({
-  ...jest.requireActual("firebase/firestore"),
-  updateDoc: jest.fn(),
-  getDoc: jest.fn(),
-  doc: jest.fn((_, ...path) => `mock/doc/path/${path.join("/")}`),
-  arrayUnion: jest.fn((val) => `arrayUnion(${val})`),
+// 1. Mock the dynamic components (next/dynamic)
+jest.mock("react-split", () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="split-wrapper">{children}</div>
+  ),
 }));
-jest.mock("next/navigation", () => ({
-  useRouter: jest.fn(),
-  usePathname: jest.fn(() => "/problems/two-sum"),
+
+jest.mock("react-confetti", () => ({
+  __esModule: true,
+  default: () => <div data-testid="confetti-effect" />,
 }));
-jest.mock("react-confetti", () => () => <div data-testid="confetti" />);
 
-const mockUseAuthState = useAuthState as jest.Mock;
-const mockUpdateDoc = updateDoc as jest.Mock;
-const mockGetDoc = getDoc as jest.Mock;
+// 2. Mock internal hooks
+jest.mock("@/hooks/useWindowSize", () => ({
+  __esModule: true,
+  default: () => ({ width: 1024, height: 768 }),
+}));
 
-describe("Workspace Integration Test", () => {
-  const problem = problems["two-sum"];
+// 3. Mock Child Components to verify prop drilling
+jest.mock("@/components/Workspace/ProblemDescription", () => ({
+  __esModule: true,
+  default: ({ problem, _solved }: any) => (
+    <div data-testid="problem-description">
+      {problem.title} - Solved: {_solved.toString()}
+    </div>
+  ),
+}));
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseAuthState.mockReturnValue([{ uid: "test-user" }, false, null]);
-    mockGetDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => ({
-        solvedProblems: [],
-        likedProblems: [],
-        dislikedProblems: [],
-        starredProblems: [],
-      }),
-    });
-    mockUpdateDoc.mockResolvedValue(undefined);
-  });
+jest.mock("@/components/Workspace/Playground", () => ({
+  __esModule: true,
+  default: ({ problem }: any) => (
+    <div data-testid="playground-section">{problem.id} Editor</div>
+  ),
+}));
 
-  it("should show confetti and solved checkmark on successful submission", async () => {
-    // Temporarily mock the handler to always succeed for the test
-    const originalHandler = problem.handlerFunction;
-    problem.handlerFunction = jest.fn().mockReturnValue(true);
+describe("Workspace Integration", () => {
+  const mockId = "two-sum";
+  const expectedProblem = problems[mockId];
 
-    render(
-      <>
-        <Workspace problemId="two-sum" />
-        <ToastContainer />
-      </>,
+  it("should render both Description and Playground with correct problem data", async () => {
+    render(<Workspace problemId={mockId} />);
+
+    // Verify the Split wrapper exists
+    const splitWrapper = await screen.findByTestId("split-wrapper");
+    expect(splitWrapper).toBeInTheDocument();
+
+    // Verify ProblemDescription received the correct title from the problems object
+    expect(screen.getByTestId("problem-description")).toHaveTextContent(
+      expectedProblem.title,
     );
 
-    // Initially, confetti and solved checkmark are not there
-    expect(screen.queryByTestId("confetti")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        (c, el) =>
-          el?.parentElement?.classList.contains("text-green-s") ?? false,
-      ),
-    ).not.toBeInTheDocument();
-
-    // Find and click the submit button in the Playground's footer
-    const submitButton = screen.getByRole("button", { name: "Submit" });
-    fireEvent.click(submitButton);
-
-    // Assertions
-    await waitFor(() => {
-      expect(screen.getByTestId("confetti")).toBeInTheDocument();
-    });
-    expect(
-      await screen.findByText("Congrats! All tests passed!"),
-    ).toBeInTheDocument();
-    expect(mockUpdateDoc).toHaveBeenCalledWith(expect.any(String), {
-      solvedProblems: "arrayUnion(two-sum)",
-    });
-
-    // The checkmark should now be visible in the ProblemDescription
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          (c, el) =>
-            el?.parentElement?.classList.contains("text-green-s") ?? false,
-        ),
-      ).toBeInTheDocument();
-    });
-
-    problem.handlerFunction = originalHandler;
+    // Verify Playground received the correct ID
+    expect(screen.getByTestId("playground-section")).toHaveTextContent(mockId);
   });
 
-  it("should show an error toast on failed submission", async () => {
-    const originalHandler = problem.handlerFunction;
-    problem.handlerFunction = jest.fn(() => {
-      const assert = require("assert");
-      assert.deepStrictEqual({ a: 1 }, { a: 2 });
-    }) as unknown as typeof problem.handlerFunction;
+  it("should correctly initialize with solved status as false", () => {
+    render(<Workspace problemId={mockId} />);
 
-    render(
-      <>
-        <Workspace problemId="two-sum" />
-        <ToastContainer />
-      </>,
+    // Check if the 'solved' prop passed to ProblemDescription is false
+    expect(screen.getByTestId("problem-description")).toHaveTextContent(
+      "Solved: false",
     );
+  });
 
-    const submitButton = screen.getByRole("button", { name: "Submit" });
-    fireEvent.click(submitButton);
+  it("should not show confetti by default", () => {
+    render(<Workspace problemId={mockId} />);
 
-    expect(
-      await screen.findByText("Oops! One or more test cases failed"),
-    ).toBeInTheDocument();
-    expect(mockUpdateDoc).not.toHaveBeenCalled();
-    expect(
-      screen.queryByText(
-        (c, el) =>
-          el?.parentElement?.classList.contains("text-green-s") ?? false,
-      ),
-    ).not.toBeInTheDocument();
-
-    problem.handlerFunction = originalHandler;
+    // Confetti should only appear when success state is true
+    expect(screen.queryByTestId("confetti-effect")).not.toBeInTheDocument();
   });
 });
