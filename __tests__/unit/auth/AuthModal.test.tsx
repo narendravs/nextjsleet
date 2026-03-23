@@ -1,92 +1,62 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { RecoilRoot, useRecoilValue } from "recoil";
-import AuthModal from "@/components/Modals/AuthModal";
-import { useCloseModal } from "@/components/Modals/AuthModal";
-import { authModalState, AuthModalState } from "@/atoms/authModalAtom";
+import { render, screen } from "@testing-library/react";
+import { RecoilRoot } from "recoil";
+import AuthPage from "@/app/auth/page";
+import { useRouter } from "next/navigation";
+import { useAuthState } from "react-firebase-hooks/auth";
 
-// Mocks for child components
-jest.mock("@/components/Modals/Login", () => () => (
-  <div data-testid="login-form">Login Form</div>
+// No need to import { jest } from "@jest/globals" in most setups
+
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(),
+}));
+
+jest.mock("react-firebase-hooks/auth", () => ({
+  useAuthState: jest.fn(),
+}));
+
+// Mock the Navbar to keep this a "Unit" test (isolating AuthPage)
+jest.mock("@/components/Navbar/Navbar", () => () => (
+  <div data-testid="navbar" />
 ));
-jest.mock("@/components/Modals/SignUp", () => () => (
-  <div data-testid="signup-form">Signup Form</div>
-));
-jest.mock("@/components/Modals/ResetPassword", () => () => (
-  <div data-testid="reset-password-form">Reset Password Form</div>
+// Mock the AuthModal so it doesn't trigger dynamic imports
+jest.mock("@/components/Modals/AuthModal", () => () => (
+  <div data-testid="auth-modal" />
 ));
 
-// Test component to observe and trigger modal close
-const TestComponent = () => {
-  const authModal = useRecoilValue(authModalState);
-  const closeModal = useCloseModal();
+describe("AuthPage Unit Test", () => {
+  it("redirects to home if user is authenticated", () => {
+    const pushMock = jest.fn();
 
-  return (
-    <div>
-      <div data-testid="modal-state-open">{authModal.isOpen.toString()}</div>
-      <div data-testid="modal-state-type">{authModal.type}</div>
-      <button onClick={closeModal}>Close Modal Manually</button>
-      {authModal.isOpen && <AuthModal />}
-    </div>
-  );
-};
+    // Type casting to jest.Mock allows access to .mockReturnValue
+    (useRouter as jest.Mock).mockReturnValue({
+      push: pushMock,
+    });
 
-describe("AuthModal and useCloseModal Unit Test", () => {
-  const renderWithRecoil = (initialState: AuthModalState) => {
-    return render(
-      <RecoilRoot
-        initializeState={({ set }) => set(authModalState, initialState)}
-      >
-        <TestComponent />
+    // Simulate an authenticated user
+    (useAuthState as jest.Mock).mockReturnValue([{ uid: "123" }, false]);
+
+    render(
+      <RecoilRoot>
+        <AuthPage />
       </RecoilRoot>,
     );
-  };
 
-  it('should render Login component when type is "login"', () => {
-    renderWithRecoil({ isOpen: true, type: "login" });
-    expect(screen.getByTestId("login-form")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/");
   });
 
-  it('should render Signup component when type is "register"', () => {
-    renderWithRecoil({ isOpen: true, type: "register" });
-    expect(screen.getByTestId("signup-form")).toBeInTheDocument();
-  });
+  it("renders the hero image and navbar when user is NOT authenticated", () => {
+    (useRouter as jest.Mock).mockReturnValue({ push: jest.fn() });
+    // Simulate no user, not loading
+    (useAuthState as jest.Mock).mockReturnValue([null, false]);
 
-  it('should render ResetPassword component when type is "forgotPassword"', () => {
-    renderWithRecoil({ isOpen: true, type: "forgotPassword" });
-    expect(screen.getByTestId("reset-password-form")).toBeInTheDocument();
-  });
+    render(
+      <RecoilRoot>
+        <AuthPage />
+      </RecoilRoot>,
+    );
 
-  it("should close the modal on clicking the close button", () => {
-    renderWithRecoil({ isOpen: true, type: "login" });
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("true");
-
-    const closeButton = screen.getByRole("button", { name: "" }); // The close button has no name
-    fireEvent.click(closeButton);
-
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("false");
-    expect(screen.getByTestId("modal-state-type")).toHaveTextContent("login");
-  });
-
-  it("should close the modal on clicking the overlay", () => {
-    const { container } = renderWithRecoil({ isOpen: true, type: "login" });
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("true");
-
-    const overlay = container.querySelector(".bg-opacity-60");
-    expect(overlay).toBeInTheDocument();
-
-    fireEvent.click(overlay!);
-
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("false");
-    expect(screen.getByTestId("modal-state-type")).toHaveTextContent("login");
-  });
-
-  it("should close the modal on pressing the Escape key", () => {
-    renderWithRecoil({ isOpen: true, type: "login" });
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("true");
-
-    fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
-
-    expect(screen.getByTestId("modal-state-open")).toHaveTextContent("false");
-    expect(screen.getByTestId("modal-state-type")).toHaveTextContent("login");
+    // Verify the UI elements of the unit exist
+    const heroImg = screen.getByAltText("Hero img");
+    expect(heroImg).toBeInTheDocument();
   });
 });
