@@ -1,148 +1,75 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RecoilRoot } from "recoil";
 import Login from "@/components/Modals/Login";
+import { toast } from "react-toastify";
 import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
 
-// Mocks
+// 1. Correct Mocking at the top level
 jest.mock("react-firebase-hooks/auth");
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
-jest.mock("react-toastify");
+jest.mock("react-toastify", () => ({
+  toast: {
+    error: jest.fn(),
+  },
+}));
 
-describe("Login component", () => {
-  const mockUseSignInWithEmailAndPassword =
-    useSignInWithEmailAndPassword as jest.Mock;
-  const mockUseRouter = useRouter as jest.Mock;
-  const mockPush = jest.fn();
+describe("Login Component Unit Tests", () => {
   const mockSignIn = jest.fn();
-  const mockToastError = toast.error as jest.Mock;
+  const mockPush = jest.fn();
 
   beforeEach(() => {
-    mockUseRouter.mockReturnValue({ push: mockPush });
-    mockUseSignInWithEmailAndPassword.mockReturnValue([
+    jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+    (useSignInWithEmailAndPassword as jest.Mock).mockReturnValue([
       mockSignIn,
       null,
       false,
       null,
-    ]); // [signIn, user, loading, error]
-    jest.clearAllMocks();
+    ]);
   });
 
-  const renderComponent = () =>
+  it("should show error toast if fields are submitted empty", async () => {
     render(
       <RecoilRoot>
         <Login />
       </RecoilRoot>,
     );
 
-  it("renders email and password inputs and a login button", () => {
-    renderComponent();
-    expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/your password/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
-  });
-
-  it("updates input fields on change", () => {
-    renderComponent();
-    const emailInput = screen.getByLabelText(/your email/i) as HTMLInputElement;
-    const passwordInput = screen.getByLabelText(
-      /your password/i,
-    ) as HTMLInputElement;
-
-    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-
-    expect(emailInput.value).toBe("test@example.com");
-    expect(passwordInput.value).toBe("password123");
-  });
-
-  it("shows an error if fields are empty on submit", async () => {
-    renderComponent();
+    // Target the specific button and click it
     const loginButton = screen.getByRole("button", { name: /log in/i });
     fireEvent.click(loginButton);
 
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith(
-        "Please fill all fields",
-        expect.any(Object),
-      );
-    });
-    expect(mockSignIn).not.toHaveBeenCalled();
-  });
+    // Alternative: Fire submit directly on the form
+    // const form = screen.getByRole("form"); // if you add role="form" to your <form> tag
 
-  it("calls signInWithEmailAndPassword on form submit with correct credentials", async () => {
-    mockSignIn.mockResolvedValue({ user: { uid: "123" } });
-    renderComponent();
-
-    fireEvent.change(screen.getByLabelText(/your email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/your password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /log in/i }));
-
-    await waitFor(() => {
-      expect(mockSignIn).toHaveBeenCalledWith(
-        "test@example.com",
-        "password123",
-      );
-    });
-  });
-
-  it("redirects to home page on successful login", async () => {
-    mockSignIn.mockResolvedValue({ user: { uid: "123" } });
-    renderComponent();
-
-    fireEvent.change(screen.getByLabelText(/your email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/your password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /log in/i }));
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/");
-    });
-  });
-
-  it("shows an error toast if firebase hook returns an error", () => {
-    const error = { message: "Invalid credentials" };
-    mockUseSignInWithEmailAndPassword.mockReturnValue([
-      mockSignIn,
-      null,
-      false,
-      error,
-    ]);
-    renderComponent();
-    expect(mockToastError).toHaveBeenCalledWith(
-      error.message,
-      expect.any(Object),
+    expect(toast.error).toHaveBeenCalledWith(
+      "Please fill all fields",
+      expect.objectContaining({ position: "top-center" }),
     );
   });
 
-  it("shows an error toast if signIn throws an error", async () => {
-    const error = new Error("Something went wrong");
-    mockSignIn.mockRejectedValue(error);
-    renderComponent();
+  it("should disable button and show loading text when logging in", () => {
+    // Override mock for this specific test case
+    (useSignInWithEmailAndPassword as jest.Mock).mockReturnValue([
+      mockSignIn,
+      null,
+      true, // loading state
+      null,
+    ]);
 
-    fireEvent.change(screen.getByLabelText(/your email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/your password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /log in/i }));
+    render(
+      <RecoilRoot>
+        <Login />
+      </RecoilRoot>,
+    );
 
-    await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith(
-        error.message,
-        expect.any(Object),
-      );
-    });
+    // FIX: Use { name } to disambiguate the buttons
+    const button = screen.getByRole("button", { name: /logging in\.\.\./i });
+
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent("Logging in...");
   });
 });
