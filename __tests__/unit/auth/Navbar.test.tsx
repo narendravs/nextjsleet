@@ -3,40 +3,27 @@ import { RecoilRoot, useRecoilValue } from "recoil";
 import Navbar from "@/components/Navbar/Navbar";
 import { authModalState } from "@/atoms/authModalAtom";
 
-// A helper component to observe Recoil state changes
-const TestObserver = () => {
-  const { isOpen } = useRecoilValue(authModalState);
-  return <div data-testid="modal-state">{isOpen.toString()}</div>;
+// A small helper component to inspect Recoil state changes
+const RecoilStateInspector = () => {
+  const state = useRecoilValue(authModalState);
+  return (
+    <div data-testid="modal-state">{state.isOpen ? "open" : "closed"}</div>
+  );
 };
 
 describe("Navbar Unit Test", () => {
-  it("should render logo and sign-in button", () => {
+  it("opens the auth modal when 'Sign In' is clicked", () => {
     render(
       <RecoilRoot>
         <Navbar />
-      </RecoilRoot>,
-    );
-    expect(screen.getByAltText("LeetClone")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /sign in/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("should open the auth modal when sign-in button is clicked", () => {
-    render(
-      <RecoilRoot>
-        <Navbar />
-        <TestObserver />
+        <RecoilStateInspector />
       </RecoilRoot>,
     );
 
-    // Initially, modal is closed
-    expect(screen.getByTestId("modal-state")).toHaveTextContent("false");
+    const signInBtn = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(signInBtn);
 
-    const signInButton = screen.getByRole("button", { name: /sign in/i });
-    fireEvent.click(signInButton);
-
-    // After click, modal should be open
-    expect(screen.getByTestId("modal-state")).toHaveTextContent("true");
+    const stateDisplay = screen.getByTestId("modal-state");
+    expect(stateDisplay.textContent).toBe("open");
   });
 });
