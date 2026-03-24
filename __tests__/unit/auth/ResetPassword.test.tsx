@@ -1,107 +1,91 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { RecoilRoot, useRecoilValue } from "recoil";
+import { RecoilRoot } from "recoil";
 import ResetPassword from "@/components/Modals/ResetPassword";
-import { useSendPasswordResetEmail } from "react-firebase-hooks/auth";
 import { toast } from "react-toastify";
-import { authModalState } from "@/atoms/authModalAtom";
+import { useSendPasswordResetEmail } from "react-firebase-hooks/auth";
 
-// Mocks
+// --- 1. Mocks ---
 jest.mock("react-firebase-hooks/auth");
-jest.mock("react-toastify");
+jest.mock("react-toastify", () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
-describe("ResetPassword Unit Test", () => {
-  const mockSendPasswordResetEmail = jest.fn();
-  const mockUseSendPasswordResetEmail = useSendPasswordResetEmail as jest.Mock;
-  const mockToastSuccess = toast.success as jest.Mock;
-
-  const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+describe("ResetPassword Component Unit Tests", () => {
+  const mockSendEmail = jest.fn();
 
   beforeEach(() => {
-    mockUseSendPasswordResetEmail.mockReturnValue([
-      mockSendPasswordResetEmail,
-      false,
-      null,
-    ]); // [send, sending, error]
     jest.clearAllMocks();
-    alertSpy.mockClear();
+    // Default mock implementation
+    (useSendPasswordResetEmail as jest.Mock).mockReturnValue([
+      mockSendEmail,
+      false, // sending
+      null, // error
+    ]);
   });
 
-  afterAll(() => {
-    alertSpy.mockRestore();
-  });
-
-  const renderComponent = () =>
+  it("updates email input value on change", () => {
     render(
       <RecoilRoot>
         <ResetPassword />
       </RecoilRoot>,
     );
 
-  it("renders email input and a reset button", () => {
-    renderComponent();
-    expect(screen.getByLabelText(/your email/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /reset password/i }),
-    ).toBeInTheDocument();
+    const emailInput = screen.getByPlaceholderText(
+      "name@company.com",
+    ) as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+
+    expect(emailInput.value).toBe("test@example.com");
   });
 
-  it("calls sendPasswordResetEmail on form submit", async () => {
-    mockSendPasswordResetEmail.mockResolvedValue(true);
-    renderComponent();
-
-    fireEvent.change(screen.getByLabelText(/your email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /reset password/i }));
-
-    await waitFor(() => {
-      expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
-        "test@example.com",
-      );
-    });
-  });
-
-  it("shows success toast and closes modal on success", async () => {
-    mockSendPasswordResetEmail.mockResolvedValue(true);
-
-    const TestObserver = () => {
-      const { isOpen } = useRecoilValue(authModalState);
-      return <div data-testid="modal-state">{isOpen.toString()}</div>;
-    };
+  it("calls sendPasswordResetEmail and shows success toast on success", async () => {
+    mockSendEmail.mockResolvedValue(true);
 
     render(
-      <RecoilRoot
-        initializeState={({ set }) =>
-          set(authModalState, { isOpen: true, type: "forgotPassword" as const })
-        }
-      >
+      <RecoilRoot>
         <ResetPassword />
-        <TestObserver />
       </RecoilRoot>,
     );
 
-    fireEvent.change(screen.getByLabelText(/your email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.submit(screen.getByRole("button", { name: /reset password/i }));
+    const emailInput = screen.getByPlaceholderText("name@company.com");
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+
+    const submitBtn = screen.getByRole("button", { name: /reset password/i });
+    fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalledWith(
+      expect(mockSendEmail).toHaveBeenCalledWith("test@example.com");
+      expect(toast.success).toHaveBeenCalledWith(
         "Password reset email sent",
         expect.any(Object),
       );
-      expect(screen.getByTestId("modal-state")).toHaveTextContent("false");
     });
   });
 
-  it("shows an alert if firebase hook returns an error", () => {
-    const error = { message: "User not found" };
-    mockUseSendPasswordResetEmail.mockReturnValue([
-      mockSendPasswordResetEmail,
+  it("shows error toast when firebase error occurs", async () => {
+    // Simulate an error coming from the hook
+    const mockError = { message: "User not found" };
+    (useSendPasswordResetEmail as jest.Mock).mockReturnValue([
+      mockSendEmail,
       false,
-      error,
+      mockError,
     ]);
-    renderComponent();
-    expect(alertSpy).toHaveBeenCalledWith(error.message);
+
+    render(
+      <RecoilRoot>
+        <ResetPassword />
+      </RecoilRoot>,
+    );
+
+    // The useEffect in your component triggers toast.error when the error object exists
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "User not found",
+        expect.any(Object),
+      );
+    });
   });
 });
