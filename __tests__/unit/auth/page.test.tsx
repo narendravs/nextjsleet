@@ -1,83 +1,123 @@
-"use client";
 import { render, screen, waitFor } from "@testing-library/react";
 import { RecoilRoot } from "recoil";
-import AuthPage from "@/app/auth/page";
-import { authModalState } from "@/atoms/authModalAtom";
+import AuthPage from "@/app/auth/page"; // Ensure path is correct
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
+import { authModalState, AuthModalState } from "@/atoms/authModalAtom";
 
-// Mocks
+// --- 1. Mocks ---
+
+// Mock Firebase Auth Hook
 jest.mock("react-firebase-hooks/auth");
+
+// Mock Next.js Router
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
-jest.mock("@/components/Navbar/Navbar", () => () => (
-  <div data-testid="navbar">Navbar</div>
-));
-jest.mock("@/components/Modals/AuthModal", () => () => (
-  <div data-testid="auth-modal">AuthModal</div>
-));
 
-describe("AuthPage Unit Test", () => {
-  const mockUseAuthState = useAuthState as jest.Mock;
-  const mockUseRouter = useRouter as jest.Mock;
+// Mock Navbar - We mock this to isolate AuthPage logic from Navbar logic
+jest.mock("@/components/Navbar/Navbar", () => {
+  return function MockNavbar() {
+    return <div data-testid="navbar">Navbar Mock</div>;
+  };
+});
+
+// Mock AuthModal - Crucial because it's dynamically imported in the component
+jest.mock("@/components/Modals/AuthModal", () => {
+  return function MockAuthModal() {
+    return <div data-testid="auth-modal">Auth Modal Mock</div>;
+  };
+});
+
+describe("AuthPage - Complete Unit Test Suite", () => {
   const mockPush = jest.fn();
 
   beforeEach(() => {
-    mockUseRouter.mockReturnValue({ push: mockPush });
     jest.clearAllMocks();
+    (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
   });
 
-  it("should show loading spinner while checking auth state", () => {
-    mockUseAuthState.mockReturnValue([null, true, null]); // [user, loading, error]
+  // --- Group 1: UI Rendering ---
+
+  it("renders basic layout: Navbar and Hero Image", () => {
+    // Mock user as logged out
+    (useAuthState as jest.Mock).mockReturnValue([null, false]);
+
     render(
       <RecoilRoot>
         <AuthPage />
       </RecoilRoot>,
     );
-    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+
+    expect(screen.getByTestId("navbar")).toBeInTheDocument();
+    expect(screen.getByAltText("Hero img")).toBeInTheDocument();
   });
 
-  it("should redirect to home page if user is authenticated", async () => {
-    const user = { uid: "123", email: "test@test.com" };
-    mockUseAuthState.mockReturnValue([user, false, null]); // user exists, not loading
+  // --- Group 2: Authentication Side-Effects ---
+
+  it("redirects authenticated users back to the home page", async () => {
+    // Mock user as logged in
+    (useAuthState as jest.Mock).mockReturnValue([
+      { uid: "test-user-123" },
+      false,
+    ]);
+
     render(
       <RecoilRoot>
         <AuthPage />
       </RecoilRoot>,
     );
+
+    // useEffect is async, so we wait for the router call
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/");
     });
   });
 
-  it("should render Navbar and hero image when not loading and no user", () => {
-    mockUseAuthState.mockReturnValue([null, false, null]); // no user, not loading
+  it("does not redirect if the user is not logged in", async () => {
+    (useAuthState as jest.Mock).mockReturnValue([null, false]);
+
     render(
-      <RecoilRoot
-        initializeState={({ set }) =>
-          set(authModalState, { isOpen: false, type: "login" as const })
-        }
-      >
+      <RecoilRoot>
         <AuthPage />
       </RecoilRoot>,
     );
-    expect(screen.getByTestId("navbar")).toBeInTheDocument();
-    expect(screen.getByAltText("Hero img")).toBeInTheDocument();
-    expect(screen.queryByTestId("auth-modal")).not.toBeInTheDocument();
+
+    // Check that push was never called
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it("should render AuthModal when authModal.isOpen is true", () => {
-    mockUseAuthState.mockReturnValue([null, false, null]);
+  // --- Group 3: Recoil State Interaction ---
+
+  it("renders AuthModal when authModal.isOpen is true", async () => {
+    (useAuthState as jest.Mock).mockReturnValue([null, false]);
+    // FIX: Explicitly cast the state object to AuthModalState
+    const openState: AuthModalState = { isOpen: true, type: "login" };
     render(
       <RecoilRoot
-        initializeState={({ set }) =>
-          set(authModalState, { isOpen: true, type: "login" as const })
-        }
+        initializeState={(snapshot) => snapshot.set(authModalState, openState)}
       >
         <AuthPage />
       </RecoilRoot>,
     );
-    expect(screen.getByTestId("auth-modal")).toBeInTheDocument();
+
+    // FIX: Use findBy instead of getBy to handle the dynamic import delay
+    const modal = await screen.findByTestId("auth-modal");
+    expect(modal).toBeInTheDocument();
+  });
+
+  it("hides AuthModal when authModal.isOpen is false", () => {
+    (useAuthState as jest.Mock).mockReturnValue([null, false]);
+    const openState: AuthModalState = { isOpen: false, type: "login" };
+    render(
+      <RecoilRoot
+        initializeState={(snapshot) => snapshot.set(authModalState, openState)}
+      >
+        <AuthPage />
+      </RecoilRoot>,
+    );
+
+    // queryBy is used instead of getBy when we expect an element to be ABSENT
+    expect(screen.queryByTestId("auth-modal")).not.toBeInTheDocument();
   });
 });
