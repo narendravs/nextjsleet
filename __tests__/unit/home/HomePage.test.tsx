@@ -1,45 +1,111 @@
 import { render, screen } from "@testing-library/react";
-import Home from "@/app/page.tsx";
+import Home from "@/app/page"; // Adjust path based on your folder structure
+import { getDocs } from "firebase/firestore";
 import "@testing-library/jest-dom";
 
-// --- Mocks ---
+// --- 1. Mocks ---
 
-// 1. Mock Child Components
-// We mock ProblemsTable to ensure we are unit testing the Page structure, not the Table's logic.
-jest.mock("@/components/ProblemsTable/ProblemsTable", () => () => (
-  <div data-testid="mock-problems-table">Mocked Problems Table</div>
-));
-
-// Mock Topbar with virtual: true so the test doesn't crash if the path is slightly different
-jest.mock(
-  "@/components/Topbar/Topbar",
-  () => () => <div data-testid="mock-topbar">Mocked Topbar</div>,
-  { virtual: true },
-);
-
-// 2. Mock Auth Hook
-// Even if HomePage doesn't use it directly, it's safe to mock in case it checks user state
-jest.mock("react-firebase-hooks/auth", () => ({
-  useAuthState: jest.fn(() => [null, false, null]),
+// Mock Firebase SDK - This keeps the test "Pure" by avoiding real DB calls
+jest.mock("firebase/firestore", () => ({
+  getFirestore: jest.fn(),
+  collection: jest.fn(),
+  query: jest.fn(),
+  orderBy: jest.fn(),
+  getDocs: jest.fn(),
 }));
 
-describe("HomePage Unit Test", () => {
-  it("renders the home page layout correctly", () => {
-    render(<Home />);
+// Mock Firebase config
+jest.mock("@/firebase/firebase", () => ({
+  firestore: {},
+}));
 
-    // 1. Verify the ProblemsTable is rendered
-    // This confirms the HomePage is correctly composing the table component
-    expect(screen.getByTestId("mock-problems-table")).toBeInTheDocument();
+// Mock Child Components - Isolates Home logic from Topbar/Table logic
+jest.mock("@/components/Topbar/Topbar", () => {
+  return function MockTopbar() {
+    return <div data-testid="topbar">Topbar Mock</div>;
+  };
+});
 
-    // 2. Verify Topbar is rendered (if your page uses it)
-    // We use queryByTestId so the test passes even if you haven't added Topbar yet,
-    // but if it is present, we assert it is in the document.
-    const topbar = screen.queryByTestId("mock-topbar");
-    if (topbar) {
-      expect(topbar).toBeInTheDocument();
-    }
+jest.mock("@/components/ProblemsTable/ProblemsTable", () => {
+  return function MockProblemsTable({ problems }: { problems: any[] }) {
+    return (
+      <tbody data-testid="problems-table">
+        {problems.map((p) => (
+          <tr key={p.id}>
+            <td>{p.title}</td>
+          </tr>
+        ))}
+      </tbody>
+    );
+  };
+});
 
-    // 3. Verify any static text specific to the Home Page (e.g., a specific header)
-    // expect(screen.getByText("Quality Questions")).toBeInTheDocument();
+describe("Home Page - Pure Unit Test Suite", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Prevent console errors from cluttering the test output
+    jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // --- Test Case 1: Successful Data Flow ---
+  it("fetches problems and passes them to the ProblemsTable", async () => {
+    const mockData = [
+      { id: "p1", title: "Two Sum", order: 1 },
+      { id: "p2", title: "Jump Game", order: 2 },
+    ];
+
+    // Simulate Firestore returning these two problems
+    (getDocs as jest.Mock).mockResolvedValue({
+      forEach: (callback: Function) => {
+        mockData.forEach((item) => callback({ id: item.id, data: () => item }));
+      },
+    });
+
+    // Handle the async Server Component
+    const ResolvedHome = await Home();
+    render(ResolvedHome);
+
+    // Verify Main Layout
+    expect(screen.getByText(/QUALITY OVER QUANTITY/i)).toBeInTheDocument();
+    expect(screen.getByTestId("topbar")).toBeInTheDocument();
+
+    // Verify Data reached the table
+    expect(screen.getByText("Two Sum")).toBeInTheDocument();
+    expect(screen.getByText("Jump Game")).toBeInTheDocument();
+  });
+
+  // --- Test Case 2: Error Handling ---
+  it("handles Firestore failures gracefully by returning an empty list", async () => {
+    (getDocs as jest.Mock).mockRejectedValue(new Error("Network Error"));
+
+    const ResolvedHome = await Home();
+    render(ResolvedHome);
+
+    // Table should still render but be empty
+    const tableBody = screen.getByTestId("problems-table");
+    expect(tableBody.children.length).toBe(0);
+
+    // Ensure the developer is notified via console
+    expect(console.error).toHaveBeenCalledWith(
+      "Error fetching problems:",
+      expect.any(Error),
+    );
+  });
+
+  // --- Test Case 3: Static Table Headers ---
+  it("renders the static table headers correctly", async () => {
+    (getDocs as jest.Mock).mockResolvedValue({ forEach: () => {} });
+
+    const ResolvedHome = await Home();
+    render(ResolvedHome);
+
+    const headers = ["Status", "Title", "Difficulty", "Category", "Solution"];
+    headers.forEach((header) => {
+      expect(screen.getByText(header)).toBeInTheDocument();
+    });
   });
 });
