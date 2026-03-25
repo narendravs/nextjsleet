@@ -1,15 +1,14 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import ProblemsTable from "@/components/ProblemsTable/ProblemsTable";
 import { useGetSolvedProblems } from "@/hooks/useProblemsTable";
 import "@testing-library/jest-dom";
 import { DBProblem } from "@/utils/types/problem";
 
-// --- 1. MOCK DYNAMIC HOOKS ---
+// --- 1. MOCKS ---
 jest.mock("@/hooks/useProblemsTable", () => ({
   useGetSolvedProblems: jest.fn(),
 }));
 
-// --- 2. MOCK EXTERNAL LIBRARIES ---
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({
@@ -30,8 +29,7 @@ jest.mock("react-youtube", () => ({
 
 const mockUseGetSolvedProblems = useGetSolvedProblems as jest.Mock;
 
-describe("ProblemsTable Component (Unit Test)", () => {
-  // Define a small set of test data matching the DBProblem interface
+describe("ProblemsTable Component - Pure Unit Tests", () => {
   const testProblems: DBProblem[] = [
     {
       id: "two-sum",
@@ -47,7 +45,7 @@ describe("ProblemsTable Component (Unit Test)", () => {
     {
       id: "reverse-linked-list",
       title: "Reverse Linked List",
-      difficulty: "Medium",
+      difficulty: "Hard",
       category: "Linked List",
       order: 2,
       videoId: "",
@@ -59,12 +57,12 @@ describe("ProblemsTable Component (Unit Test)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    cleanup();
   });
 
-  it("renders the problems passed via props", () => {
-    mockUseGetSolvedProblems.mockReturnValue(["two-sum"]);
-
-    // FIX: Pass the 'problems' prop here
+  // --- Logic Test: Rendering ---
+  it("renders all problem titles and categories correctly", () => {
+    mockUseGetSolvedProblems.mockReturnValue([]);
     render(
       <table>
         <ProblemsTable problems={testProblems} />
@@ -73,51 +71,100 @@ describe("ProblemsTable Component (Unit Test)", () => {
 
     expect(screen.getByText("Two Sum")).toBeInTheDocument();
     expect(screen.getByText("Reverse Linked List")).toBeInTheDocument();
-    expect(screen.getByText("Easy")).toHaveClass("text-dark-green-s");
+    expect(screen.getByText("Array")).toBeInTheDocument();
+    expect(screen.getByText("Linked List")).toBeInTheDocument();
   });
 
-  it("shows a checkmark for solved problems based on the hook value", () => {
+  // --- Logic Test: Difficulty Coloring ---
+  it("applies correct CSS classes for different difficulty levels", () => {
+    mockUseGetSolvedProblems.mockReturnValue([]);
+    render(
+      <table>
+        <ProblemsTable problems={testProblems} />
+      </table>,
+    );
+
+    const easyLabel = screen.getByText("Easy");
+    const hardLabel = screen.getByText("Hard");
+
+    expect(easyLabel).toHaveClass("text-dark-green-s");
+    expect(hardLabel).toHaveClass("text-dark-pink");
+  });
+
+  // --- Logic Test: Solved Status ---
+  it("renders a checkmark only for problems marked as solved in the hook", () => {
+    // Only 'two-sum' is solved
     mockUseGetSolvedProblems.mockReturnValue(["two-sum"]);
 
-    render(
+    const { container } = render(
       <table>
         <ProblemsTable problems={testProblems} />
       </table>,
     );
 
+    // Look for the checkmark icon in the first row
+    const firstRowCheckmark = container.querySelector(".text-dark-green-s svg");
+    expect(firstRowCheckmark).toBeInTheDocument();
+
+    // The second row (Hard) should not have a checkmark icon in the status column
     const rows = screen.getAllByRole("row");
-    // Checking the first data row for the green checkmark class
-    const checkmark = rows[0].querySelector(".text-dark-green-s");
-    expect(checkmark).toBeInTheDocument();
+    const secondRowStatusCell = rows[1].querySelectorAll("td")[0];
+    expect(secondRowStatusCell).not.toHaveTextContent("✔"); // Adjust based on your checkmark implementation
   });
 
-  it("displays 'Coming soon' for problems without a videoId", () => {
+  // --- Logic Test: Video Modal Trigger ---
+  it("opens the YouTube player with the correct videoId on click", async () => {
     mockUseGetSolvedProblems.mockReturnValue([]);
-
     render(
       <table>
         <ProblemsTable problems={testProblems} />
       </table>,
     );
 
+    // FIX: Instead of getByTestId, find the SVG by its aria-label
+    const videoIcon = screen.getByLabelText("Watch solution for Two Sum");
+    fireEvent.click(videoIcon);
+
+    // Use findBy to handle any state-driven re-renders
+    const player = await screen.findByTestId("youtube-player");
+    expect(player).toBeInTheDocument();
+    expect(player).toHaveTextContent("8hly31xKli0");
+  });
+
+  // --- Logic Test: Video Availability ---
+  it("shows 'Coming soon' if videoId is missing", () => {
+    mockUseGetSolvedProblems.mockReturnValue([]);
+    render(
+      <table>
+        <ProblemsTable problems={testProblems} />
+      </table>,
+    );
+
+    // Reverse Linked List has videoId: ""
     expect(screen.getByText("Coming soon")).toBeInTheDocument();
   });
 
-  it("opens the YouTube modal when clicking the video icon", () => {
+  // --- Logic Test: Closing Modal ---
+  it("closes the YouTube modal when the Escape key is pressed", async () => {
     mockUseGetSolvedProblems.mockReturnValue([]);
-
     render(
       <table>
         <ProblemsTable problems={testProblems} />
       </table>,
     );
 
-    // Find the SVG icon in the first row and click it
-    const youtubeIcon = screen.getAllByRole("row")[0].querySelector("svg");
-    fireEvent.click(youtubeIcon!);
+    // Open it
+    const videoIcon = screen.getByLabelText("Watch solution for Two Sum");
+    fireEvent.click(videoIcon);
 
-    const player = screen.getByTestId("youtube-player");
+    // Ensure it's open
+    const player = await screen.findByTestId("youtube-player");
     expect(player).toBeInTheDocument();
-    expect(player).toHaveTextContent("8hly31xKli0");
+
+    // Simulate Escape key on the global window
+    fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
+
+    // Verify it is gone
+    expect(screen.queryByTestId("youtube-player")).not.toBeInTheDocument();
   });
 });
