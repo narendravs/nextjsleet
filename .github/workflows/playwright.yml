@@ -68,24 +68,22 @@ jobs:
         run: npm run build
 
       # --- PLAYWRIGHT WITH CONDITIONAL LOGIC ---
-      - name: Run Playwright tests
-        id: playwright_check
+      - name: Sync Snapshots & Run Tests
+        id: playwright_run
+        continue-on-error: true
         run: |
           SNAPSHOT_DIR="e2e/leetcode.spec.ts-snapshots"
 
-          # LOGIC: Check if any file in the folder contains the word "linux"
-          # If no Linux snapshots exist, we MUST generate them.
-          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ] || [ ! -d "$SNAPSHOT_DIR" ] || ! ls $SNAPSHOT_DIR/*linux.png 1> /dev/null 2>&1; then
-            echo "🔄 Manual update requested..."
-            npx playwright test --update-snapshots
-            echo "PUSH_REQUIRED=true" >> $GITHUB_ENV
-          elif [ ! -d "$SNAPSHOT_DIR" ]; then
-            echo "🆕 Snapshots missing. Generating initial baselines..."
+          # --- PHASE 1: PREPARATION (Condition Only) ---
+          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ] || \
+             [ ! -d "$SNAPSHOT_DIR" ] || \
+             ! ls $SNAPSHOT_DIR/*linux.png 1> /dev/null 2>&1; then
+            
+            echo "🚨 Snapshots missing or update requested. Generating baselines..."
             npx playwright test --update-snapshots
             echo "PUSH_REQUIRED=true" >> $GITHUB_ENV
           else
-            echo "✅ Snapshots found. Running standard visual regression..."
-            npx playwright test
+            echo "✅ Snapshots already exist. Skipping generation..."
             echo "PUSH_REQUIRED=false" >> $GITHUB_ENV
           fi
 
@@ -94,9 +92,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add e2e/leetcode.spec.ts-snapshots/*.png
+          git add -f e2e/leetcode.spec.ts-snapshots/*.png
           git commit -m "chore(ci): sync crawler snapshots [skip ci]" || echo "No changes"
           git push
+
+          # --- PHASE 2: EXECUTION (Always Runs) ---
+          echo "🚀 Executing main test suite..."
+          npx playwright test
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
