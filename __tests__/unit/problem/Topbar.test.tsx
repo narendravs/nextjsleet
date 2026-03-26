@@ -8,12 +8,36 @@ jest.mock("react-firebase-hooks/auth");
 jest.mock("@/components/Buttons/Logout", () => () => (
   <div data-testid="logout-button">Logout</div>
 ));
+
+jest.mock("next/dynamic", () => ({
+  __esModule: true,
+  default: (loader: any) => {
+    // This forces the dynamic component to render immediately
+    const Component = require("@/components/Topbar/ProblemNavigation").default;
+    return Component;
+  },
+}));
+
+// 1. If ProblemNavigation is a DEFAULT export:
+// import ProblemNavigation from "./ProblemNavigation";
+jest.mock("@/components/Topbar/ProblemNavigation", () => ({
+  __esModule: true,
+  // This covers default imports: import ProblemNavigation from '...'
+  default: function MockNav() {
+    return <div data-testid="problem-nav">Problem Navigation</div>;
+  },
+  // This covers named imports: import { ProblemNavigation } from '...'
+  ProblemNavigation: function MockNav() {
+    return <div data-testid="problem-nav">Problem Navigation</div>;
+  },
+}));
+
+// 2. If Timer is a NAMED export:
+// import { Timer } from "../Timer/Timer";
 jest.mock("@/components/Timer/Timer", () => ({
+  __esModule: true,
   Timer: () => <div data-testid="timer">Timer</div>,
 }));
-jest.mock("@/components/Topbar/ProblemNavigation", () => () => (
-  <div data-testid="problem-nav">Problem Navigation</div>
-));
 
 const mockUseAuthState = useAuthState as jest.Mock;
 
