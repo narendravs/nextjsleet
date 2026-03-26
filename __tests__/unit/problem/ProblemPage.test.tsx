@@ -1,8 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import ProblemPage, { generateMetadata } from "@/app/problems/[pid]/page";
-import { problems } from "@/utils/problems";
 
-// Mock the client component that is dynamically imported
+// 1. Mock the client component
 jest.mock("@/components/ProblemClient/ProblemClient", () => {
   return function DummyProblemClient({ problemId }: { problemId: string }) {
     return <div data-testid="problem-client">{problemId}</div>;
@@ -13,8 +12,10 @@ describe("ProblemPage (Server Component)", () => {
   describe("generateMetadata", () => {
     it("should generate correct metadata for a valid problem", async () => {
       const metadata = await generateMetadata({ params: { pid: "two-sum" } });
-      expect(metadata.title).toBe("Two Sum | LeetCode Clone");
-      expect(metadata.description).toBe("Solve the Two Sum problem.");
+
+      // FIX: Added the "1. " prefix to match your actual implementation
+      expect(metadata.title).toBe("1. Two Sum | LeetCode Clone");
+      expect(metadata.description).toBe("Solve the 1. Two Sum problem.");
     });
 
     it("should generate 'Not Found' metadata for an invalid problem", async () => {
@@ -26,12 +27,14 @@ describe("ProblemPage (Server Component)", () => {
   });
 
   describe("Page Component", () => {
-    // To test async Server Components, we need to resolve the promise they return
     it("should render the ProblemClient for a valid problem ID", async () => {
+      // Resolve the Server Component
       const PageComponent = await ProblemPage({ params: { pid: "two-sum" } });
       render(PageComponent);
 
-      const clientComponent = screen.getByTestId("problem-client");
+      // FIX: Use findByTestId to wait for the "Loading..." state to finish
+      const clientComponent = await screen.findByTestId("problem-client");
+
       expect(clientComponent).toBeInTheDocument();
       expect(clientComponent).toHaveTextContent("two-sum");
     });
