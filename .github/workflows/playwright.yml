@@ -73,7 +73,9 @@ jobs:
         run: |
           SNAPSHOT_DIR="e2e/leetcode.spec.ts-snapshots"
 
-          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ]; then
+          # LOGIC: Check if any file in the folder contains the word "linux"
+          # If no Linux snapshots exist, we MUST generate them.
+          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ] || [ ! -d "$SNAPSHOT_DIR" ] || ! ls $SNAPSHOT_DIR/*linux.png 1> /dev/null 2>&1; then
             echo "🔄 Manual update requested..."
             npx playwright test --update-snapshots
             echo "PUSH_REQUIRED=true" >> $GITHUB_ENV
