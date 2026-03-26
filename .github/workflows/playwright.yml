@@ -89,8 +89,15 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -f e2e/leetcode.spec.ts-snapshots/*.png
-          git commit -m "chore(ci): sync snapshots [skip ci]" || echo "No changes"
-          git push
+          # Only proceed if there are actual changes to commit
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(ci): sync snapshots [skip ci]"
+            
+            # THE FIX: Push from the current HEAD to the PR's origin branch
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          else
+            echo "✅ No snapshot changes detected. Skipping push."
+          fi
 
       - name: Main Test Execution (Phase 2)
         # This step is OUTSIDE the push logic, so it ALWAYS runs.
