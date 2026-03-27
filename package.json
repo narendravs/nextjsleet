@@ -10,17 +10,14 @@
     "lint": "next lint",
     "lhci": "npx dotenv -e .env -- npx @lhci/cli autorun",
     "test": "npx playwright test",
-    "test:all": "jest __test__/",
     "test:unit": "jest __tests__/unit",
     "test:integration": "jest __tests__/integration",
     "test:unit:watch": "jest --watch",
     "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report",
-    "test:coverage": "jest __test__/ --coverage"
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.1",
-    "@next/bundle-analyzer": "^16.1.6",
     "@uiw/codemirror-theme-vscode": "^4.21.21",
     "@uiw/codemirror-themes": "^4.21.21",
     "@uiw/react-codemirror": "^4.21.21",
@@ -30,7 +27,7 @@
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-confetti": "^6.1.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "^18.2.0",
     "react-firebase-hooks": "^5.1.1",
     "react-icons": "^4.12.0",
     "react-split": "^2.0.14",
@@ -41,7 +38,6 @@
   },
   "devDependencies": {
     "@lhci/cli": "^0.13.0",
-    "@lhci/server": "^0.15.1",
     "@playwright/test": "^1.58.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -49,8 +45,8 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.0.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^8",
@@ -63,9 +59,5 @@
     "tailwindcss": "^3.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5"
-  },
-  "description": "🚀 Next.js LeetCode Clone",
-  "main": ".lighthouserc.js",
-  "author": "",
-  "license": "ISC"
+  }
 }
