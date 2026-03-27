@@ -4,14 +4,22 @@ on:
     branches: [master, production]
   pull_request:
     branches: [master, production]
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Update Playwright Snapshots?"
+        required: false
+        type: boolean
+        default: false
+permissions:
+  contents: write
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
 
-    # 1. Define all your .env variables here so they are available to all steps
     env:
-      PORT: 7000
+      PORT: "7000"
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
@@ -19,33 +27,83 @@ jobs:
       NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
       NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
       NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+      CI: true
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Required to allow the bot to push back to the branch
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: "lts/*"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      # --- STEPS FOR JEST ---
+      # --- CONDITIONAL JEST STEPS ---
       - name: Run Unit Tests
-        run: npm run test:unit
+        run: |
+          if [ -d "./tests/unit" ] || [ -d "./src/__tests__/unit" ]; then
+            npm run test:unit
+          else
+            echo "Unit test folder not found. Skipping..."
+          fi
 
       - name: Run Integration Tests
-        run: npm run test:integration
+        run: |
+          if [ -d "./tests/integration" ] || [ -d "./src/__tests__/integration" ]; then
+            npm run test:integration
+          else
+            echo "Integration test folder not found. Skipping..."
+          fi
 
-      # --- PLAYWRIGHT STEPS ---
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      # 2. YOU MUST BUILD THE APP BEFORE RUNNING TESTS
       - name: Build Next.js app
         run: npm run build
 
-      - name: Run Playwright tests
-        run: npx playwright test
+      # --- PLAYWRIGHT WITH CONDITIONAL LOGIC ---
+      - name: Sync Snapshots (Phase 1)
+        id: playwright_sync
+        continue-on-error: true
+        run: |
+          SNAPSHOT_DIR="e2e/leetcode.spec.ts-snapshots"
+          if [ "${{ github.event.inputs.update_snapshots }}" == "true" ] || \
+             [ ! -d "$SNAPSHOT_DIR" ] || \
+             ! ls $SNAPSHOT_DIR/*linux.png 1> /dev/null 2>&1; then
+            echo "🚨 Snapshots missing. Generating..."
+            npx playwright test --update-snapshots
+            echo "PUSH_REQUIRED=true" >> $GITHUB_ENV
+          else
+            echo "PUSH_REQUIRED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and Push
+        if: env.PUSH_REQUIRED == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f e2e/leetcode.spec.ts-snapshots/*.png
+          # Only proceed if there are actual changes to commit
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(ci): sync snapshots [skip ci]"
+            
+            # THE FIX: Push from the current HEAD to the PR's origin branch
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          else
+            echo "✅ No snapshot changes detected. Skipping push."
+          fi
+
+      - name: Main Test Execution (Phase 2)
+        # This step is OUTSIDE the push logic, so it ALWAYS runs.
+        run: |
+          echo "🚀 Executing main test suite..."
+          npx playwright test
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

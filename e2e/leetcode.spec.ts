@@ -125,6 +125,8 @@ test.describe("Sitemap Smoke Tests", () => {
     // and pass on subsequent runs if UI hasn't changed.
     await expect(page).toHaveScreenshot("landing-page-baseline.png", {
       maxDiffPixelRatio: 0.1,
+      threshold: 0.2,
+      animations: "disabled",
       mask: [page.locator(".dynamic-date-or-id")], // Mask parts that change
     });
   });
