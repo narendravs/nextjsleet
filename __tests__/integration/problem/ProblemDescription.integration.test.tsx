@@ -1,9 +1,10 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { RecoilRoot } from "recoil"; // Added for safety
 import ProblemDescription from "@/components/Workspace/ProblemDescription";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getDocs, getDoc, runTransaction } from "firebase/firestore";
 
-// 1. Mock Firebase Hooks and Firestore
+// Mock Firebase Hooks and Firestore
 jest.mock("react-firebase-hooks/auth");
 jest.mock("firebase/firestore");
 
@@ -53,7 +54,11 @@ describe("ProblemDescription Firebase Integration", () => {
   });
 
   it("fetches and displays problem data from Firestore (getDocs)", async () => {
-    render(<ProblemDescription problem={mockProblem} _solved={false} />);
+    render(
+      <RecoilRoot>
+        <ProblemDescription problem={mockProblem} _solved={false} />
+      </RecoilRoot>,
+    );
 
     const difficultyBadge = await screen.findByText(
       "Easy",
@@ -67,39 +72,65 @@ describe("ProblemDescription Firebase Integration", () => {
   });
 
   it("applies the correct CSS class based on fetched difficulty", async () => {
-    render(<ProblemDescription problem={mockProblem} _solved={false} />);
+    render(
+      <RecoilRoot>
+        <ProblemDescription problem={mockProblem} _solved={false} />
+      </RecoilRoot>,
+    );
 
     const difficultyBadge = await screen.findByText("Easy");
     expect(difficultyBadge).toHaveClass("bg-olive");
   });
 
   it("checks if user has liked the problem using getDoc", async () => {
-    // Modify mock for this specific test: user already liked two-sum
     (getDoc as jest.Mock).mockResolvedValue({
       exists: () => true,
       data: () => ({ ...mockUserData, likedProblems: ["two-sum"] }),
     });
 
-    render(<ProblemDescription problem={mockProblem} _solved={false} />);
+    render(
+      <RecoilRoot>
+        <ProblemDescription problem={mockProblem} _solved={false} />
+      </RecoilRoot>,
+    );
 
-    // Verify the Like button has the active color (dark-blue-s)
+    // Verify the Like button has the active color
     await waitFor(() => {
-      const likeIcon = screen.getByLabelText("Unlike").querySelector("svg");
-      expect(likeIcon).toHaveClass("text-dark-blue-s");
+      // Using label "Unlike" because if it's already liked, the tooltip/label usually flips
+      const unlikeButton = screen.getByLabelText(/unlike/i);
+      const icon = unlikeButton.querySelector("svg");
+      expect(icon).toHaveClass("text-dark-blue-s");
     });
   });
 
   it("executes a transaction when the Like button is clicked", async () => {
     (runTransaction as jest.Mock).mockResolvedValue(null);
 
-    render(<ProblemDescription problem={mockProblem} _solved={false} />);
+    render(
+      <RecoilRoot>
+        <ProblemDescription problem={mockProblem} _solved={false} />
+      </RecoilRoot>,
+    );
 
-    // Wait for initial load
-    const likeButton = await screen.findByLabelText("Like");
+    // 1. Wait for the loading to finish
+    await screen.findByText(/easy|medium|hard/i);
 
+    // 2. Target the Like button specifically.
+    // We use a Regex with ^ and $ to ensure we match ONLY "Like" or "Unlike",
+    // and not "Dislike".
+    const likeButton = await screen.findByRole("button", {
+      name: /^(Like|Unlike)$/,
+    });
+
+    // 3. Click it
     fireEvent.click(likeButton);
 
-    // Verify runTransaction was called
-    expect(runTransaction).toHaveBeenCalled();
+    // 4. Verify transaction
+    await waitFor(
+      () => {
+        expect(runTransaction).toHaveBeenCalled();
+      },
+      { timeout: 3000 },
+    );
   });
 });

@@ -194,11 +194,9 @@ describe("SignUp Component - Complete Unit Tests", () => {
     fireEvent.change(screen.getByPlaceholderText("*****"), {
       target: { value: "P", name: "password" },
     });
-
     // 2. Click Register
     const submitBtn = screen.getByRole("button", { name: /register/i });
     fireEvent.click(submitBtn);
-
     // 3. Use waitFor to allow the async try/catch/finally to complete
     await waitFor(
       () => {
@@ -209,8 +207,56 @@ describe("SignUp Component - Complete Unit Tests", () => {
       },
       { timeout: 2000 },
     ); // Increase timeout if needed for slow CI
-
     // 4. Verify cleanup happened
     expect(toast.dismiss).toHaveBeenCalledWith("loadingToast");
+  });
+
+  it("should handle firebase errors gracefully", async () => {
+    // 1. Silence console.log for a clean CI run
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    // 2. IMPORTANT: Force the mock function to reject so the 'catch' block runs
+    const mockRejectCreateUser = jest
+      .fn()
+      .mockRejectedValue(new Error("Firebase Auth Error"));
+
+    (useCreateUserWithEmailAndPassword as jest.Mock).mockReturnValue([
+      mockRejectCreateUser,
+      null,
+      false, // loading
+      null, // error hook state (we use the catch block instead)
+    ]);
+
+    render(
+      <RecoilRoot>
+        <SignUp />
+      </RecoilRoot>,
+    );
+
+    // 3. Fill required fields to pass the "Missing Fields" validation first
+    fireEvent.change(screen.getByPlaceholderText("name@company.com"), {
+      target: { value: "test@test.com", name: "email" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("John Doe"), {
+      target: { value: "John", name: "displayName" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("*****"), {
+      target: { value: "pass123", name: "password" },
+    });
+
+    // 4. Trigger the actual registration
+    const submitBtn = screen.getByRole("button", { name: /register/i });
+    fireEvent.click(submitBtn);
+
+    // 5. Verify the catch block logic
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Firebase Auth Error",
+        expect.objectContaining({ position: "top-center" }),
+      );
+    });
+
+    // 6. Cleanup
+    consoleSpy.mockRestore();
   });
 });

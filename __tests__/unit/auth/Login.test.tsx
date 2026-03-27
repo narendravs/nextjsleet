@@ -37,18 +37,23 @@ describe("Login Component Unit Tests", () => {
         <Login />
       </RecoilRoot>,
     );
-
-    // Target the specific button and click it
+    // 1. Find the button using the text that IS actually there
     const loginButton = screen.getByRole("button", { name: /log in/i });
-    fireEvent.click(loginButton);
 
-    // Alternative: Fire submit directly on the form
-    // const form = screen.getByRole("form"); // if you add role="form" to your <form> tag
+    // 2. Access the form directly from the button to bypass "required" validation
+    const form = loginButton.closest("form");
+    fireEvent.submit(form!);
 
-    expect(toast.error).toHaveBeenCalledWith(
-      "Please fill all fields",
-      expect.objectContaining({ position: "top-center" }),
-    );
+    // 3. Wait for the toast to be called with your specific config
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Please fill all fields",
+        expect.objectContaining({
+          position: "top-center",
+          theme: "dark",
+        }),
+      );
+    });
   });
 
   it("should disable button and show loading text when logging in", () => {
