@@ -47,7 +47,7 @@ jobs:
       # --- CONDITIONAL JEST STEPS ---
       - name: Run Unit Tests
         run: |
-          if [ -d "./tests/unit" ] || [ -d "./src/__tests__/unit" ]; then
+          if [ -d "./tests/unit" ] || [ -d "./__tests__/unit" ]; then
             npm run test:unit
           else
             echo "Unit test folder not found. Skipping..."
@@ -55,7 +55,7 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          if [ -d "./tests/integration" ] || [ -d "./src/__tests__/integration" ]; then
+          if [ -d "./tests/integration" ] || [ -d "./__tests__/integration" ]; then
             npm run test:integration
           else
             echo "Integration test folder not found. Skipping..."
