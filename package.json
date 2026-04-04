@@ -5,16 +5,8 @@
   "scripts": {
     "dev": "next dev -p 7000",
     "build": "next build",
-    "postbuild": "npx next-sitemap",
-    "start": "next start -p 7000",
-    "lint": "next lint",
-    "lhci": "npx dotenv -e .env -- npx @lhci/cli autorun",
-    "test": "npx playwright test",
-    "test:unit": "jest __tests__/unit",
-    "test:integration": "jest __tests__/integration",
-    "test:unit:watch": "jest --watch",
-    "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.1",
