@@ -4,10 +4,7 @@ import dynamic from "next/dynamic";
 
 // Dynamically import ProblemClient with SSR disabled to prevent Firebase initialization errors
 const ProblemClient = dynamic(
-  () =>
-    import("@/components/ProblemClient/ProblemClient").then((mod) => {
-      return mod.default;
-    }),
+  () => import("@/components/ProblemClient/ProblemClient"),
   {
     ssr: false,
     loading: () => (
@@ -38,6 +35,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pid } = await params;
+
   const problem = problems[pid];
 
   if (!problem) {
