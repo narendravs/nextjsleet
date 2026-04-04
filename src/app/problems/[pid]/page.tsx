@@ -6,8 +6,7 @@ import dynamic from "next/dynamic";
 const ProblemClient = dynamic(
   () =>
     import("@/components/ProblemClient/ProblemClient").then((mod) => {
-      // Explicitly handle default and named exports to ensure manifest generation
-      return mod.default || mod.ProblemClient || mod;
+      return mod.default;
     }),
   {
     ssr: false,
