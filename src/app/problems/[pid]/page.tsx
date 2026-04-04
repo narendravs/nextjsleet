@@ -4,7 +4,11 @@ import dynamic from "next/dynamic";
 
 // Dynamically import ProblemClient with SSR disabled to prevent Firebase initialization errors
 const ProblemClient = dynamic(
-  () => import("@/components/ProblemClient/ProblemClient"),
+  () =>
+    import("@/components/ProblemClient/ProblemClient").then((mod) => {
+      // Explicitly handle default and named exports to ensure manifest generation
+      return mod.default || mod.ProblemClient || mod;
+    }),
   {
     ssr: false,
     loading: () => (
@@ -23,8 +27,8 @@ type Props = {
   params: Promise<{ pid: string }>; // 1. Update type to a Promise
 };
 
-// 3. If you only want to support static problems, set this to false to prevent 500s on unknown PIDs
-export const dynamicParams = true;
+// 3. Set to false to ensure all static problems are built and validated at build time.
+export const dynamicParams = false;
 
 /**
  * 2. Generate static params so Vercel pre-renders these pages at build time.
