@@ -20,11 +20,11 @@ const ProblemClient = dynamic(
 );
 
 type Props = {
-  params: { pid: string };
+  params: Promise<{ pid: string }>; // 1. Update type to a Promise
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { pid } = params;
+  const { pid } = await params;
   const problem = problems[pid];
 
   if (!problem) {
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const ProblemPage = async ({ params }: Props) => {
-  const { pid } = params;
+  const { pid } = await params;
 
   const problem = problems[pid];
 
