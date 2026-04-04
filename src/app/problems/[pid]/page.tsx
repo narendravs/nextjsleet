@@ -23,6 +23,13 @@ type Props = {
   params: Promise<{ pid: string }>; // 1. Update type to a Promise
 };
 
+/**
+ * 2. Generate static params so Vercel pre-renders these pages at build time.
+ */
+export async function generateStaticParams() {
+  return Object.keys(problems).map((pid) => ({ pid }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { pid } = await params;
   const problem = problems[pid];
