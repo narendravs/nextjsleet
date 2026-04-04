@@ -10,6 +10,14 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["react-icons"],
+    outputFileTracingExcludes: {
+      "*": [
+        "node_modules/@playwright/**",
+        "node_modules/lighthouse/**",
+        "node_modules/puppeteer/**",
+        "node_modules/@lhci/**",
+      ],
+    },
   },
 };
 
