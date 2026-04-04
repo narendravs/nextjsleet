@@ -23,11 +23,14 @@ type Props = {
   params: Promise<{ pid: string }>; // 1. Update type to a Promise
 };
 
+// 3. If you only want to support static problems, set this to false to prevent 500s on unknown PIDs
+export const dynamicParams = true;
+
 /**
  * 2. Generate static params so Vercel pre-renders these pages at build time.
  */
 export async function generateStaticParams() {
-  return Object.keys(problems).map((pid) => ({ pid }));
+  return Object.keys(problems || {}).map((pid) => ({ pid: String(pid) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
